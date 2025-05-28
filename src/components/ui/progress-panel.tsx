@@ -1,30 +1,50 @@
-type ProgressTier = keyof typeof progressFillClassMap;
-interface ProgressPanelProps {
+'use client'
+import { ProgressTier } from "@/models/progressBarData"
+import { progressFillClassMap } from "@/models/progressBarData"
+import { useState, useEffect } from "react"
+
+export interface ProgressPanelProps {
   text: string
   progress: number // 0-100
   progressFill: ProgressTier
-  timeSpent?: string
+  timeSpent?: number
   className?: string
 }
-
-export const progressFillClassMap = {
-  bronze: 'bg-amber-700 group-hover:bg-amber-800 group-active:bg-amber-800',
-  silver: 'bg-gray-400 group-hover:bg-gray-600 group-active:bg-gray-600',
-  gold: 'bg-yellow-300 group-hover:bg-yellow-500 group-active:bg-yellow-500',
-  platinum: 'bg-blue-300 group-hover:bg-blue-500 group-active:bg-blue-500',
-  diamond: 'bg-purple-300 group-hover:bg-purple-400 group-active:bg-purple-400',
-  master: 'bg-purple-700 group-hover:bg-purple-900 group-active:bg-purple-900',
-} as const;
-
 
 export default function ProgressPanel({ text, progress, progressFill, timeSpent, className = "" }: ProgressPanelProps) {
   // Ensure progress is between 0 and 100
   const clampedProgress = Math.min(Math.max(progress, 0), 100)
 
+  const [seconds, setSeconds] = useState(0);
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (isActive) {
+      interval = setInterval(() => {
+        setSeconds((prev) => prev + 1);
+      }, 1000);
+    }
+
+    return () => clearInterval(interval);
+  }, [isActive]);
+
+  const onPanelClick = () => {
+    setIsActive((prev) => !prev)
+
+    console.log('Seconds: ' + seconds)
+  }
+
+  const resetTimer = () => {
+    setIsActive(false);
+    setSeconds(0);
+  };
+
   return (
     <div className={`relative w-full ${className}`}>
       {/* Main panel container */}
-      <button className="group relative h-32 w-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-xl border border-gray-200 hover:border-gray-300 active:border-gray-400 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md active:shadow-lg active:scale-[0.98] transform">
+      <button onClick={onPanelClick} className="group relative h-32 w-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-xl border border-gray-200 hover:border-gray-300 active:border-gray-400 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md active:shadow-lg active:scale-[0.98] transform">
         {/* Progress fill */}
         <div
           className={`absolute top-0 left-0 h-full ${progressFillClassMap[progressFill]}  transition-all duration-300 ease-in-out rounded-xl`}
