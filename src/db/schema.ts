@@ -1,8 +1,8 @@
-import { integer, pgTable, varchar, time, serial } from "drizzle-orm/pg-core";
+import { integer, pgTable, varchar, serial } from "drizzle-orm/pg-core";
 
 // Users table
 export const usersTable = pgTable("users", {
-    id: serial("id").primaryKey(), // serial is shorthand for identity column
+    id: serial("id").primaryKey(),
     name: varchar("name", { length: 255 }).notNull(),
 });
 
@@ -11,8 +11,10 @@ export const mainSkillsTable = pgTable("main_skills", {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 255 }).notNull(),
     userId: integer("user_id")
-        .references(() => usersTable.id, { onDelete: "cascade" }) // optional: onDelete
+        .references(() => usersTable.id, { onDelete: "cascade" })
         .notNull(),
+    timeCount: integer("time_count")
+        .notNull()
 });
 
 // Sub-skills table
@@ -20,7 +22,8 @@ export const subSkillsTable = pgTable("sub_skills", {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 255 }).notNull(),
     parentId: integer("parent_id")
-        .references(() => mainSkillsTable.id, { onDelete: "cascade" }) // FK to main skill
+        .references(() => mainSkillsTable.id, { onDelete: "cascade" })
         .notNull(),
-    timeCount: time("time_count", { precision: 0 }), // optional: adjust precision
+    timeCount: integer("time_count")
+        .notNull()
 });
