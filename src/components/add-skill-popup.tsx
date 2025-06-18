@@ -17,13 +17,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ComplexSkill } from "@/app/skills/page"
 
 interface AddSkillPopupProps {
     onAddSkill: () => void
-    parentSkills?: string[]
+    skills: ComplexSkill[]
 }
 
-export default function AddSkillPopup({ onAddSkill, parentSkills = [] }: AddSkillPopupProps) {
+export default function AddSkillPopup({ onAddSkill, skills = [] }: AddSkillPopupProps) {
     const [open, setOpen] = useState(false)
     const [name, setName] = useState("")
     const [timeCount, setTimeCount] = useState("")
@@ -31,12 +32,19 @@ export default function AddSkillPopup({ onAddSkill, parentSkills = [] }: AddSkil
     const [nameError, setNameError] = useState("")
     const [loading, setLoading] = useState(false)
 
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!name.trim()) {
             setNameError("Name is required");
-            return;
+            return
+        }
+
+
+        if (skills.some(skill => skill.name === name)) {
+            setNameError("Skill of that name already exists")
+            return
         }
 
         setNameError("");
@@ -44,14 +52,14 @@ export default function AddSkillPopup({ onAddSkill, parentSkills = [] }: AddSkil
 
         try {
             // Call POST API
-            const response = await fetch("/api/skills", {
+            const response = await fetch("/api/main-skills", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     name: name.trim(),
                     userId: 1,
-                    timeCount: timeCount.trim() || undefined,
-                    parentSkill: parentSkill || undefined,
+                    timeCount: timeCount.trim() || 0,
+                    parentId: skills.find(skill => skill.name === parentSkill)?.id ?? null
                 }),
             });
 
@@ -128,11 +136,11 @@ export default function AddSkillPopup({ onAddSkill, parentSkills = [] }: AddSkil
                                     <SelectValue placeholder="Select a parent skill" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {parentSkills.map((skill) => (
-                                        <SelectItem key={skill} value={skill}>
-                                            {skill}
+                                    {skills.map((skill) => !skill.parentId ? (
+                                        <SelectItem key={skill.id} value={skill.name}>
+                                            {skill.name}
                                         </SelectItem>
-                                    ))}
+                                    ) : null)}
                                 </SelectContent>
                             </Select>
                         </div>
