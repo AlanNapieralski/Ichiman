@@ -12,10 +12,11 @@ type Timer = {
 
 interface TimerStore {
     timers: Record<number, Timer>
+    activateTimer: (id: number, initTime: number) => void
     startTimer: (id: number) => void
     stopTimer: (id: number) => void
     getTime: (id: number) => number
-    getTotalTime: (id: number) => number
+    getChildTime: (id: number) => number
     setParentId: (id: number, parentId: number) => void
     tick: () => void
 }
@@ -24,31 +25,45 @@ export const useTimerStore = create<TimerStore>()(
     persist(
         (set, get) => ({
             timers: {},
+            activateTimer: (id, initTime) => {
+                const timers = { ...get().timers }
+
+                timers[id] = {
+                    ...(timers[id] || { id, time: initTime, isRunning: false, lastStartedAt: null, parentId: null }),
+                    isRunning: true,
+                    lastStartedAt: Date.now(),
+                    isBlocked: false
+                }
+
+                set({ timers })
+            },
             startTimer: (id) => {
                 const timers = { ...get().timers }
-                const isChildRunning = Object.entries(timers).filter(([_, timer]) => timer.parentId === id).some(([_, timer]) => timer.isRunning)
 
-                if (isChildRunning) {
-                    timers[id] = {
-                        ...(timers[id] || { id, time: 0, isRunning: false, lastStartedAt: null }),
-                        isRunning: false,
-                        lastStartedAt: null,
-                        isBlocked: true
-                    }
-                } else {
-                    timers[id] = {
-                        ...(timers[id] || { id, time: 0, isRunning: false, lastStartedAt: null }),
-                        isRunning: true,
-                        lastStartedAt: Date.now(),
-                        isBlocked: false
-                    }
-
+                timers[id] = {
+                    ...(timers[id]),
+                    isRunning: true,
+                    lastStartedAt: Date.now(),
+                    isBlocked: false
                 }
+
+                // if is a child and running, block the parent
+                if (timers[id].parentId) {
+                    const parentId = timers[id].parentId
+                    timers[parentId].isBlocked = true
+                    // if is a parent and running, block every child
+                } else if (!timers[id].parentId) {
+                    Object.values(timers).filter(timer => timer.parentId == id).forEach(child => child.isBlocked = true)
+                }
+
                 set({ timers })
             },
             stopTimer: (id) => {
                 const timers = { ...get().timers }
                 const timer = timers[id]
+                if (!timer)
+                    return
+
                 if (timer?.isRunning) {
                     const now = Date.now()
                     const elapsed = Math.floor((now - (timer.lastStartedAt ?? now)) / 1000)
@@ -56,32 +71,28 @@ export const useTimerStore = create<TimerStore>()(
                     timer.isRunning = false
                     timer.lastStartedAt = null
                 }
-                if (timer.parentId) {
-                    const isChildRunning = Object.entries(timers).filter(([_, orgTimer]) => orgTimer.parentId === timer.parentId).some(([_, orgTimer]) => orgTimer.isRunning)
-                    if (!isChildRunning) {
-                        timers[timer.parentId].isBlocked = false
+
+                // if is a child and stopped, and every child has stopped, unblock the parent
+                if (timers[id].parentId) {
+                    const parentId = timers[id].parentId
+                    const children = Object.values(timers).filter(timer => timer.parentId === parentId)
+                    if (children.every(child => !child.isRunning)) {
+                        timers[parentId].isBlocked = false
                     }
+                    // if is a parent and stopped, unblock every child
+                } else if (!timers[id].parentId) {
+                    Object.values(timers).filter(timer => timer.parentId == id).forEach(child => child.isBlocked = false)
                 }
+
                 set({ timers })
             },
-            getTotalTime: (id) => {
+            getChildTime: (id) => {
                 const timers = get().timers
-                const parent = timers[id]
-                console.log(Object.values(timers))
                 const childTimes = Object.values(timers)
                     .filter(t => t.parentId === id)
-                    .reduce((total, child) => {
-                        console.log('child object', child)
-                        return total + child.time
-                    }, 0)
+                    .reduce((total, child) => total + child.time, 0)
 
-                const parentTime = parent
-                    ? parent.time + (parent.isRunning ? Math.floor((Date.now() - (parent.lastStartedAt ?? Date.now())) / 1000) : 0)
-                    : 0
-
-                console.log('parent', parentTime)
-                console.log('child', childTimes)
-                return parentTime + childTimes
+                return childTimes
             },
             tick: () => {
                 // force UI update by triggering a dummy state change (if needed)
@@ -90,7 +101,7 @@ export const useTimerStore = create<TimerStore>()(
             setParentId: (id: number, parentId: number) => {
                 const timers = { ...get().timers };
                 if (timers[id]) {
-                    timers[id].parentId = parentId; // Assign parentId
+                    timers[id].parentId = parentId
                 }
                 set({ timers });
             },
@@ -101,7 +112,14 @@ export const useTimerStore = create<TimerStore>()(
                 }
                 set({ timers })
             },
-            getTime: (id) => get().timers[id]?.time || 0,
+            getTime: (id: number) => get().timers[id]?.time || 0,
+            setTime: (id: number, time: number) => {
+                const timers = { ...get().timers }
+                if (timers[id]) {
+                    timers[id].time = time
+                }
+                set({ timers })
+            }
         }),
         {
             name: 'timer-storage',

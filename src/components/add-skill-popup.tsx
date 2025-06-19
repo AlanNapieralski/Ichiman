@@ -17,11 +17,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ComplexSkill } from "@/app/skills/page"
+import { Skill } from "@/app/skills/page"
 
 interface AddSkillPopupProps {
     onAddSkill: () => void
-    skills: ComplexSkill[]
+    skills: Skill[]
 }
 
 export default function AddSkillPopup({ onAddSkill, skills = [] }: AddSkillPopupProps) {

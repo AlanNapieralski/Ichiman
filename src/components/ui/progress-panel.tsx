@@ -31,16 +31,16 @@ const formatTime = (seconds: number): string => {
 }
 
 function getRank(timeCount: number): Rank | null {
+    console.log(rankDataArr.slice().reverse())
     const result = rankDataArr.slice().reverse().find(item => {
         return timeCount >= item[1].goal;
     })
 
-    return result ? result[0] as Rank : null;
+    return result ? result[0] : null
 }
 
 
 export default function ProgressPanel({ skill, className = "" }: ProgressPanelProps) {
-    // Ensure progress is between 0 and 100
     const id = skill.id
     const subSkills = skill.subSkill
     const isParent = subSkills ? true : false
@@ -48,11 +48,34 @@ export default function ProgressPanel({ skill, className = "" }: ProgressPanelPr
     const [isActive, setIsActive] = useState(false)
     const [dropdown, setDropdown] = useState(false)
     const [clampedProgress, setClampedProgress] = useState(0)
-    const [childRunning, setChildRunning] = useState(false)
 
-    const { getTotalTime, getTime, startTimer, stopTimer, setParentId, timers } = useTimerStore()
+    const { activateTimer, getChildTime, startTimer, stopTimer, setParentId } = useTimerStore()
+    const timer = useTimerStore((state) => state.timers[id])
+    const time = useTimerStore((state) => state.timers[id]?.time || 0)
+    const isBlocked = useTimerStore((state) => state.timers[id]?.isBlocked || false)
+    const [displayTime, setDisplayTime] = useState(time)
 
-    const rank = getRank(getTime(id)) as Rank
+    const [rank, setRank] = useState<Rank>("bronze")
+
+    useEffect(() => {
+        if (!timer) return;
+
+        const interval = setInterval(() => {
+            const initTime = isParent ? timer.time + getChildTime(id) : timer.time
+
+            if (timer.isRunning) {
+                const now = Date.now()
+                const elapsed = Math.floor((now - (timer.lastStartedAt ?? now)) / 1000)
+                setDisplayTime(initTime + elapsed)
+            } else {
+                setDisplayTime(initTime)
+            }
+        }, 1000)
+
+        updateProgressFill()
+
+        return () => clearInterval(interval); // Cleanup on unmount
+    }, [timer])
 
     function updateProgressFill() {
         const upperBound = findRankUpperBound(rank)
@@ -60,14 +83,25 @@ export default function ProgressPanel({ skill, className = "" }: ProgressPanelPr
         if (!upperBound) { // master
             progress = 100
         } else {
-            progress = (getTime(id) / upperBound) * 100
+            if (isParent) {
+                progress = ((time + getChildTime(id)) / upperBound) * 100
+            } else {
+                progress = (time / upperBound) * 100
+            }
         }
-        setClampedProgress(Math.floor(Math.min(Math.max(progress, 0), 100)))
+        if (progress)
+            setClampedProgress(Math.floor(Math.min(Math.max(progress, 0), 100)))
     }
 
     useEffect(() => {
-        if (isParent && skill.parentId)
+        activateTimer(id, skill.timeCount)
+        if (!isParent && skill.parentId)
             setParentId(id, skill.parentId)
+        const totalTime = time + getChildTime(id)
+        const rnk = getRank(totalTime) ?? "bronze"
+        console.log(skill.name, rnk)
+        setRank(rnk)
+        updateProgressFill()
     }, [])
 
     useEffect(() => {
@@ -80,14 +114,7 @@ export default function ProgressPanel({ skill, className = "" }: ProgressPanelPr
         }
     }, [isActive])
 
-    useEffect(() => {
-        setChildRunning(timers[id].isBlocked)
-    }, [isActive])
-
     const onPanelClick = () => {
-        if (isParent && childRunning) {
-            return
-        }
         setIsActive((prev) => !prev)
     }
 
@@ -102,7 +129,7 @@ export default function ProgressPanel({ skill, className = "" }: ProgressPanelPr
             <div className={``}>
                 <div className="w-full flex relative gap-4">
                     {/* Main panel container */}
-                    <button disabled={childRunning} onClick={onPanelClick} className={`group m-2 relative h-24 w-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-xl border border-gray-200 hover:border-gray-300 active:border-gray-400 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md active:shadow-lg active:scale-[0.98] transform ${isActive ? 'border-red-500 border-4' : ''} ${className}`}>
+                    <button disabled={isBlocked} onClick={onPanelClick} className={`group m-2 relative h-24 w-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-xl border border-gray-200 hover:border-gray-300 active:border-gray-400 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md active:shadow-lg active:scale-[0.98] transform ${isActive ? 'border-red-500 border-4' : ''} ${className}`}>
                         {/* Progress fill */}
                         <div
                             className={`absolute top-0 left-0 h-full transition-all duration-300 ease-in-out rounded-xl ${progressFillClassMap[rank]}`}
@@ -114,11 +141,9 @@ export default function ProgressPanel({ skill, className = "" }: ProgressPanelPr
                             <span className="font-bold text-2xl text-gray-800 group-hover:text-gray-900 group-active:text-black transition-colors duration-300">
                                 {skill.name}
                             </span>
-                            {getTime(id) && (
-                                <span className="text-lg text-gray-600 group-hover:text-gray-700 group-active:text-gray-800 font-mono transition-colors duration-300">
-                                    {subSkills ? formatTime(getTotalTime(id)) : formatTime(getTime(id))}
-                                </span>
-                            )}
+                            <span className="text-lg text-gray-600 group-hover:text-gray-700 group-active:text-gray-800 font-mono transition-colors duration-300">
+                                {formatTime(displayTime)}
+                            </span>
                         </div>
                     </button>
                     {subSkills && subSkills.length > 0 ?
