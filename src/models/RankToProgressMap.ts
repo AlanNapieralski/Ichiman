@@ -1,4 +1,8 @@
 export const rankData = {
+    loading: {
+        goal: 0,
+        nextRank: null
+    },
     bronze: {
         goal: 0,
         nextRank: 'silver',
@@ -26,8 +30,9 @@ export const rankData = {
 } as const;
 
 
-export const rankDataArr = Object.entries(rankData).sort(
-    ([, a], [, b]) => a.goal - b.goal
+// highest first
+export const rankDataArr = Object.entries(rankData).filter(([name, _]) => name !== 'loading').sort(
+    ([, a], [, b]) => b.goal - a.goal
 ) as [Rank, { goal: number; nextRank: Rank }][]
 
 export type Rank = keyof typeof rankData;

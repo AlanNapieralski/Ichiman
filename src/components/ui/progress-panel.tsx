@@ -3,6 +3,7 @@ import { Skill } from "@/app/skills/page"
 import { useTimerStore } from "@/hooks/timerStore"
 import { Rank, rankDataArr } from "@/models/RankToProgressMap"
 import { progressFillClassMap } from "@/models/progressBarData"
+import { ConsoleLogWriter } from "drizzle-orm"
 import { useState, useEffect } from "react"
 
 export interface ProgressPanelProps {
@@ -10,12 +11,7 @@ export interface ProgressPanelProps {
     className?: string
 }
 
-const findRankUpperBound = (rank: Rank): number => {
-    const rankIndex = rankDataArr.findIndex((item) => item[0] === rank);
-    return rankDataArr[rankIndex + 1]?.[1]?.goal ?? 100;
-}
-
-const formatTime = (seconds: number): string => {
+function formatTime(seconds: number): string {
     if (seconds < 3600) {
         const mins = Math.floor(seconds / 60)
         const secs = seconds % 60
@@ -30,22 +26,22 @@ const formatTime = (seconds: number): string => {
     }
 }
 
-function getRank(timeCount: number): Rank | null {
-    console.log(rankDataArr.slice().reverse())
-    const result = rankDataArr.slice().reverse().find(item => {
-        return timeCount >= item[1].goal;
-    })
+function getRank(timeCount: number): Rank {
+    const rank = rankDataArr.find(([_, obj]) => timeCount >= obj.goal)
+    if (!rank)
+        return 'loading'
 
-    return result ? result[0] : null
+    return rank[0]
 }
 
 
-export default function ProgressPanel({ skill, className = "" }: ProgressPanelProps) {
+const ProgressPanel = ({ skill, className = "" }: ProgressPanelProps) => {
     const id = skill.id
     const subSkills = skill.subSkill
     const isParent = subSkills ? true : false
 
     const [isActive, setIsActive] = useState(false)
+    const [isRendered, setIsRendered] = useState(false)
     const [dropdown, setDropdown] = useState(false)
     const [clampedProgress, setClampedProgress] = useState(0)
 
@@ -53,66 +49,9 @@ export default function ProgressPanel({ skill, className = "" }: ProgressPanelPr
     const timer = useTimerStore((state) => state.timers[id])
     const time = useTimerStore((state) => state.timers[id]?.time || 0)
     const isBlocked = useTimerStore((state) => state.timers[id]?.isBlocked || false)
+
+    const [rank, setRank] = useState<Rank>("loading")
     const [displayTime, setDisplayTime] = useState(time)
-
-    const [rank, setRank] = useState<Rank>("bronze")
-
-    useEffect(() => {
-        if (!timer) return;
-
-        const interval = setInterval(() => {
-            const initTime = isParent ? timer.time + getChildTime(id) : timer.time
-
-            if (timer.isRunning) {
-                const now = Date.now()
-                const elapsed = Math.floor((now - (timer.lastStartedAt ?? now)) / 1000)
-                setDisplayTime(initTime + elapsed)
-            } else {
-                setDisplayTime(initTime)
-            }
-        }, 1000)
-
-        updateProgressFill()
-
-        return () => clearInterval(interval); // Cleanup on unmount
-    }, [timer])
-
-    function updateProgressFill() {
-        const upperBound = findRankUpperBound(rank)
-        let progress
-        if (!upperBound) { // master
-            progress = 100
-        } else {
-            if (isParent) {
-                progress = ((time + getChildTime(id)) / upperBound) * 100
-            } else {
-                progress = (time / upperBound) * 100
-            }
-        }
-        if (progress)
-            setClampedProgress(Math.floor(Math.min(Math.max(progress, 0), 100)))
-    }
-
-    useEffect(() => {
-        activateTimer(id, skill.timeCount)
-        if (!isParent && skill.parentId)
-            setParentId(id, skill.parentId)
-        const totalTime = time + getChildTime(id)
-        const rnk = getRank(totalTime) ?? "bronze"
-        console.log(skill.name, rnk)
-        setRank(rnk)
-        updateProgressFill()
-    }, [])
-
-    useEffect(() => {
-        if (isActive) {
-            startTimer(id)
-        }
-        if (!isActive) {
-            stopTimer(id)
-            updateProgressFill()
-        }
-    }, [isActive])
 
     const onPanelClick = () => {
         setIsActive((prev) => !prev)
@@ -124,12 +63,75 @@ export default function ProgressPanel({ skill, className = "" }: ProgressPanelPr
         }
     }
 
+    const updateProgressFill = (rank: Rank) => {
+        const nextRank = rankDataArr.find(([name, _]) => rank === name)?.[1]?.nextRank
+        const upperBound = rankDataArr.find(([name, _]) => name === nextRank)?.[1].goal
+
+        if (nextRank === null) {
+            setClampedProgress(100) // master
+            return
+        }
+        if (upperBound === undefined) { // time has not started yet
+            setClampedProgress(0)
+            return
+        }
+
+        setClampedProgress((time / upperBound) * 100)
+    }
+
+    useEffect(() => {
+        activateTimer(id, skill.timeCount);
+        if (!isParent && skill.parentId)
+            setParentId(id, skill.parentId);
+    }, [])
+
+    useEffect(() => {
+        if (isActive) {
+            startTimer(id)
+        }
+        if (!isActive) {
+            stopTimer(id)
+        }
+    }, [isActive])
+
+    useEffect(() => {
+        if (!timer) return;
+
+        setRank(getRank(time))
+        // Display Time initialisation
+        const updateDisplayTime = () => {
+            const initTime = isParent ? timer.time + getChildTime(id) : timer.time
+
+            if (timer.isRunning) {
+                const now = Date.now()
+                const elapsed = Math.floor((now - (timer.lastStartedAt ?? now)) / 1000)
+                setDisplayTime(initTime + elapsed)
+            } else {
+                setDisplayTime(initTime)
+            }
+        }
+
+        if (!isRendered) {
+            setIsRendered(true)
+            updateDisplayTime()
+        }
+
+        const interval = setInterval(() => updateDisplayTime(), 1000)
+
+        return () => clearInterval(interval)
+    }, [timer])
+
+
+    useEffect(() => {
+        updateProgressFill(rank)
+    }, [displayTime])
+
     return (
         <div className="w-full">
-            <div className={``}>
-                <div className="w-full flex relative gap-4">
+            <div className={`w-full`}>
+                <div className={`flex relative gap-4 ${className}`}>
                     {/* Main panel container */}
-                    <button disabled={isBlocked} onClick={onPanelClick} className={`group m-2 relative h-24 w-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-xl border border-gray-200 hover:border-gray-300 active:border-gray-400 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md active:shadow-lg active:scale-[0.98] transform ${isActive ? 'border-red-500 border-4' : ''} ${className}`}>
+                    <button disabled={isBlocked} onClick={onPanelClick} className={`group relative w-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-xl border border-gray-200 hover:border-gray-300 active:border-gray-400 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md active:shadow-lg active:scale-[0.98] transform ${isActive ? 'border-red-500 border-4' : ''}`}>
                         {/* Progress fill */}
                         <div
                             className={`absolute top-0 left-0 h-full transition-all duration-300 ease-in-out rounded-xl ${progressFillClassMap[rank]}`}
@@ -164,7 +166,7 @@ export default function ProgressPanel({ skill, className = "" }: ProgressPanelPr
             {isParent ?
                 <div className={`min-h-[100vh] flex-1 flex flex-col items-start rounded-xl bg-muted/50 md:min-h-min bg-red-50 ${dropdown ? "hidden" : "block"}`}>
                     {subSkills?.map((subSkill) => {
-                        return <ProgressPanel key={subSkill.id} skill={subSkill} className="h-1/2 w-2/3" />
+                        return <ProgressPanel key={subSkill.id} skill={subSkill} className="h-12 w-1/3 ml-8 mb-4" />
                     })}
                 </div>
                 :
@@ -173,3 +175,6 @@ export default function ProgressPanel({ skill, className = "" }: ProgressPanelPr
         </div>
     )
 }
+
+
+export default ProgressPanel

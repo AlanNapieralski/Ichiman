@@ -4,11 +4,10 @@ import { skillsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 import type { Skill } from "@/app/skills/page";
-import type { ComplexSkill } from "@/app/skills/page";
 
 const db = drizzle(process.env.DATABASE_URL!);
 
-function combineSkills(skills: Skill[]): ComplexSkill[] {
+function combineSkills(skills: Skill[]): Skill[] {
     const subSkills: Skill[] = skills.filter(skill => skill.parentId);
 
     const res = skills
@@ -23,11 +22,20 @@ function combineSkills(skills: Skill[]): ComplexSkill[] {
 
 // GET: Fetch all main skills
 export async function GET() {
-    const skills = await db.select().from(skillsTable) as Skill[]
+    try {
+        const skills = await db.select().from(skillsTable) as Skill[]
+        const res = combineSkills(skills)
 
-    const res = combineSkills(skills)
+        if (!res || res.length <= 0) {
+            return NextResponse.json({ error: "No result" }, { status: 400 });
+        }
 
-    return NextResponse.json(res);
+        return NextResponse.json(res);
+    } catch (error) {
+        console.error("GET /api/main-skills error:", error)
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    }
+
 }
 
 // POST: Add a new main skill
@@ -38,6 +46,10 @@ export async function POST(req: NextRequest) {
 
         if (!name || !userId || timeCount == null) {
             return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+        }
+
+        if (Number(timeCount) > 2, 147, 483, 647) {
+            return NextResponse.json({ error: "Value of the Time count is too big" }, { status: 400 });
         }
 
         const newSkill = {

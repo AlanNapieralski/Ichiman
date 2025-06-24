@@ -1,9 +1,4 @@
-'use client'
-import ProgressPanel from "@/components/ui/progress-panel"
-
-import { rankDataArr } from "@/models/RankToProgressMap"
-import AddSkillPopup from "@/components/add-skill-popup"
-import { useEffect, useState } from "react"
+import ClientSkillsPage from "@/components/client-skills-page"
 
 export type Skill = {
     id: number,
@@ -14,41 +9,25 @@ export type Skill = {
     subSkill?: Skill[]
 }
 
-async function fetchSkills(): Promise<Skill[]> {
-    const res = await fetch("/api/main-skills")
-    return await res.json()
-}
+const SkillsPage = async () => {
+    const res = await fetch("http://localhost:3000/api/main-skills", {
+        cache: "no-store", // optional if you want SSR fresh data
+    })
 
-const SkillsPage = () => {
-    const [skillList, setSkillList] = useState<Skill[]>([])
+    let skills: Skill[]
 
-    const loadSkills = async () => {
-        const skills = await fetchSkills();
-        setSkillList(skills);
+    if (!res.ok) {
+        const error = await res.json()
+        console.log("No results:", error)
+        skills = []
+    } else {
+        skills = await res.json()
     }
 
-    useEffect(() => {
-        loadSkills()
-    }, [])
 
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4">
-            <AddSkillPopup
-                skills={skillList}
-                onAddSkill={() => loadSkills()}
-            />
-            <div className="min-h-[100vh] flex-1 flex flex-col items-start rounded-xl bg-muted/50 md:min-h-min p-8 bg-red-50">
-                {skillList.map((skill) => {
-                    if (skill.parentId) {
-                        return null;
-                    }
-
-                    return <ProgressPanel key={skill.id} skill={skill} className="" />
-                })}
-            </div>
-        </div>
+        <ClientSkillsPage initialSkills={skills} />
     )
 }
-
 
 export default SkillsPage

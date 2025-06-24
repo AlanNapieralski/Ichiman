@@ -20,16 +20,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skill } from "@/app/skills/page"
 
 interface AddSkillPopupProps {
-    onAddSkill: () => void
     skills: Skill[]
+    onAddSkill?: () => void
 }
 
-export default function AddSkillPopup({ onAddSkill, skills = [] }: AddSkillPopupProps) {
+export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopupProps) {
     const [open, setOpen] = useState(false)
     const [name, setName] = useState("")
     const [timeCount, setTimeCount] = useState("")
     const [parentSkill, setParentSkill] = useState("")
     const [nameError, setNameError] = useState("")
+    const [timeCountError, setTimeCountError] = useState("")
     const [loading, setLoading] = useState(false)
 
 
@@ -40,7 +41,14 @@ export default function AddSkillPopup({ onAddSkill, skills = [] }: AddSkillPopup
             setNameError("Name is required");
             return
         }
-
+        if (timeCount.trim() && isNaN(Number(timeCount))) {
+            setTimeCountError("Time must be a number");
+            return;
+        }
+        if (Number(timeCount) > 2, 147, 483, 647) {
+            setTimeCountError("The number you have provided is too big")
+            return;
+        }
 
         if (skills.some(skill => skill.name === name)) {
             setNameError("Skill of that name already exists")
@@ -58,7 +66,7 @@ export default function AddSkillPopup({ onAddSkill, skills = [] }: AddSkillPopup
                 body: JSON.stringify({
                     name: name.trim(),
                     userId: 1,
-                    timeCount: timeCount.trim() || 0,
+                    timeCount: timeCount.trim() | 0,
                     parentId: skills.find(skill => skill.name === parentSkill)?.id ?? null
                 }),
             });
@@ -125,9 +133,13 @@ export default function AddSkillPopup({ onAddSkill, skills = [] }: AddSkillPopup
                             <Input
                                 id="timeSpent"
                                 value={timeCount}
-                                onChange={(e) => setTimeCount(e.target.value)}
+                                onChange={(e) => {
+                                    setTimeCount(e.target.value)
+                                    if (timeCountError) setTimeCountError("")
+                                }}
                                 placeholder="e.g., 2 years, 6 months, 100 hours"
                             />
+                            {timeCountError && <p className="text-sm text-destructive">{timeCountError}</p>}
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="parentSkill">Parent Skill (optional)</Label>

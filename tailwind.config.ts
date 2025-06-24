@@ -37,6 +37,10 @@ export default {
 		'bg-purple-700',
 		'group-hover:bg-purple-900',
 		'group-active:bg-purple-900',
+
+		'bg-red-600',
+		'group-hover:bg-red-900',
+		'group-active:bg-red-900',
 	],
 	theme: {
 		extend: {
