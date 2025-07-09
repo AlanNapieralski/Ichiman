@@ -1,9 +1,8 @@
 'use client'
-import { Skill } from "@/app/skills/page"
+import { Skill } from "@/app/dashboard/page"
 import { useTimerStore } from "@/hooks/timerStore"
 import { Rank, rankDataArr } from "@/models/RankToProgressMap"
 import { progressFillClassMap } from "@/models/progressBarData"
-import { ConsoleLogWriter } from "drizzle-orm"
 import { useState, useEffect } from "react"
 
 export interface ProgressPanelProps {
@@ -80,9 +79,9 @@ const ProgressPanel = ({ skill, className = "" }: ProgressPanelProps) => {
     }
 
     useEffect(() => {
-        activateTimer(id, skill.timeCount);
+        activateTimer(id, skill, skill.timeCount)
         if (!isParent && skill.parentId)
-            setParentId(id, skill.parentId);
+            setParentId(id, skill.parentId)
     }, [])
 
     useEffect(() => {

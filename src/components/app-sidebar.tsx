@@ -1,16 +1,9 @@
 import * as React from "react"
 import {
     BookOpen,
-    Code,
-    Database,
-    FileCode,
-    FileText,
-    LayoutDashboard,
     LogOut,
     Home,
-    Server,
-    Terminal,
-    Zap,
+    LucideProps,
 } from "lucide-react"
 
 import {
@@ -27,42 +20,59 @@ import {
     SidebarRail,
     SidebarSeparator,
 } from "@/components/ui/sidebar"
+import { fetchSkills } from "@/lib/skills/utils"
 
-// This is sample data with added icons
-const data = {
-    navMain: [
-        {
-            title: "Main",
-            url: "#",
-            items: [
-                {
-                    title: "Dashboard",
-                    url: "#",
-                    icon: Home,
-                },
-            ],
-        },
-        {
-            title: "Skills",
-            url: "#",
-            items: [
-                {
-                    title: "Programming",
-                    url: "#",
-                    icon: LayoutDashboard,
-                },
-                {
-                    title: "Volleyball",
-                    url: "#",
-                    isActive: true,
-                    icon: Database,
-                },
-            ],
-        },
-    ],
+type IconType = React.ForwardRefExoticComponent<Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>
+
+type NavItem = {
+    title: string
+    url: string
+    icon?: IconType
+    isActive?: boolean
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+type NavSection = {
+    title: string
+    url: string
+    items: NavItem[]
+}
+
+type NavData = {
+    navMain: NavSection[]
+}
+
+
+const AppSidebar = async ({ ...props }: React.ComponentProps<typeof Sidebar>) => {
+    const skills = await fetchSkills()
+    const parentSkills = skills.filter(skill => !skill.parentId)
+
+    const formattedSkills: NavItem[] = parentSkills.map(skill => ({
+        title: skill.name,
+        url: `/skills/${skill.name.replaceAll(' ', '-')}`,
+        isActive: false
+    }))
+
+
+    const data: NavData = {
+        navMain: [
+            {
+                title: "Main",
+                url: "#",
+                items: [
+                    {
+                        title: "Dashboard",
+                        url: "/skills",
+                        icon: Home,
+                    },
+                ],
+            },
+            {
+                title: "Skills",
+                url: "#",
+                items: formattedSkills
+            },
+        ],
+    }
     return (
         <Sidebar {...props}>
             <SidebarHeader className="flex items-center justify-center p-4">
@@ -115,3 +125,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </Sidebar>
     )
 }
+
+
+export default AppSidebar

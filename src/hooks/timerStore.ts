@@ -1,18 +1,20 @@
+import { Skill } from '@/app/dashboard/page'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 type Timer = {
     id: number
-    parentId?: number
+    skill: Skill
     time: number
     isRunning: boolean
     lastStartedAt: number | null
     isBlocked: boolean
+    parentId: number | null
 }
 
 interface TimerStore {
     timers: Record<number, Timer>
-    activateTimer: (id: number, initTime: number) => void
+    activateTimer: (id: number, skill: Skill, initTime: number) => void
     startTimer: (id: number) => void
     stopTimer: (id: number) => void
     getTime: (id: number) => number
@@ -25,15 +27,16 @@ export const useTimerStore = create<TimerStore>()(
     persist(
         (set, get) => ({
             timers: {},
-            activateTimer: (id, initTime) => {
+            activateTimer: (id, skill, initTime) => {
                 const timers = { ...get().timers }
 
                 timers[id] = {
-                    ...(timers[id] || { id, time: initTime, isRunning: false, lastStartedAt: null, parentId: null }),
+                    ...(timers[id] || { id, time: initTime, skill: skill, isRunning: false, lastStartedAt: null, parentId: null }),
                     isRunning: true,
                     lastStartedAt: Date.now(),
                     isBlocked: false
                 }
+
 
                 set({ timers })
             },
@@ -47,12 +50,13 @@ export const useTimerStore = create<TimerStore>()(
                     isBlocked: false
                 }
 
+                console.log(timers[id])
                 // if is a child and running, block the parent
-                if (timers[id].parentId) {
-                    const parentId = timers[id].parentId
+                const parentId = timers[id].parentId
+                if (parentId) {
                     timers[parentId].isBlocked = true
                     // if is a parent and running, block every child
-                } else if (!timers[id].parentId) {
+                } else if (!parentId) {
                     Object.values(timers).filter(timer => timer.parentId == id).forEach(child => child.isBlocked = true)
                 }
 
@@ -61,6 +65,7 @@ export const useTimerStore = create<TimerStore>()(
             stopTimer: (id) => {
                 const timers = { ...get().timers }
                 const timer = timers[id]
+
                 if (!timer)
                     return
 
@@ -73,14 +78,14 @@ export const useTimerStore = create<TimerStore>()(
                 }
 
                 // if is a child and stopped, and every child has stopped, unblock the parent
-                if (timers[id].parentId) {
-                    const parentId = timers[id].parentId
+                const parentId = timers[id].parentId
+                if (parentId) {
                     const children = Object.values(timers).filter(timer => timer.parentId === parentId)
                     if (children.every(child => !child.isRunning)) {
                         timers[parentId].isBlocked = false
                     }
                     // if is a parent and stopped, unblock every child
-                } else if (!timers[id].parentId) {
+                } else if (!parentId) {
                     Object.values(timers).filter(timer => timer.parentId == id).forEach(child => child.isBlocked = false)
                 }
 
@@ -89,7 +94,7 @@ export const useTimerStore = create<TimerStore>()(
             getChildTime: (id) => {
                 const timers = get().timers
                 const childTimes = Object.values(timers)
-                    .filter(t => t.parentId === id)
+                    .filter(t => t.skill?.parentId === id)
                     .reduce((total, child) => total + child.time, 0)
 
                 return childTimes
@@ -100,8 +105,8 @@ export const useTimerStore = create<TimerStore>()(
             },
             setParentId: (id: number, parentId: number) => {
                 const timers = { ...get().timers };
-                if (timers[id]) {
-                    timers[id].parentId = parentId
+                if (timers[id]?.skill) {
+                    timers[id].skill.parentId = parentId
                 }
                 set({ timers });
             },

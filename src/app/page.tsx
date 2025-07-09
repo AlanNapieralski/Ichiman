@@ -1,7 +1,7 @@
-import { AppSidebar } from "../components/app-sidebar"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import SkillsPage from "./skills/page"
+import SkillsPage from "./dashboard/page"
+import AppSidebar from "@/components/app-sidebar"
 
 export default function Page() {
     return (

@@ -2,7 +2,7 @@
 import { useState } from "react"
 import AddSkillPopup from "@/components/add-skill-popup"
 import ProgressPanel from "@/components/ui/progress-panel"
-import { Skill } from "@/app/skills/page"
+import { Skill } from "@/app/skills/dashboard/page"
 
 interface Props {
     initialSkills: Skill[]

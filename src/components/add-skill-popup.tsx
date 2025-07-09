@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Skill } from "@/app/skills/page"
+import { Skill } from "@/app/dashboard/page"
 
 interface AddSkillPopupProps {
     skills: Skill[]
@@ -66,7 +66,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
                 body: JSON.stringify({
                     name: name.trim(),
                     userId: 1,
-                    timeCount: timeCount.trim() | 0,
+                    timeCount: timeCount.trim() || 0,
                     parentId: skills.find(skill => skill.name === parentSkill)?.id ?? null
                 }),
             });

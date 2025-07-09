@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { skillsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-import type { Skill } from "@/app/skills/page";
+import type { Skill } from "@/app/skills/dashboard/page";
 
 const db = drizzle(process.env.DATABASE_URL!);
 
