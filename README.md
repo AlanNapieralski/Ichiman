@@ -1,36 +1,126 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🧠 Ichiman — A Calm, Consistent Path to Mastery
 
-## Getting Started
+> _Ichiman (一万) means 10,000 in Japanese. Inspired by the “10,000-hour rule,” this app aims to help you reach mastery—quietly, mindfully, and sustainably._
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ⚠️ Still in Development
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ichiman is currently in active development. Many features—including the **ranking system**, **non-toxic social comparison**, and **smart consistency metrics**—are still being built. This README documents the philosophy and planned design of the app, as well as the progress so far.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🧭 Philosophy: No Streaks, No Burnout, Just Progress
 
-## Learn More
+Ichiman is **not just another time tracker**. It’s a tool for **meaningful, self-paced progress**—without pressure to show up every single day, without streaks, without guilt.
 
-To learn more about Next.js, take a look at the following resources:
+We don't reward obsessive daily grind. We reward **sustainable consistency**—the kind that leads to real growth without burnout.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Inspired by Malcolm Gladwell’s interpretation of the **10,000-hour rule**, Ichiman helps you track the time you've truly invested in a skill, not with meaningless gamification, but through **clear milestones**, **rank progression**, and **gentle accountability**.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🚀 Tech Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Ichiman is built using modern, fast, and accessible technologies:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- ⚛️ [React 19](https://react.dev/)
+- 🌐 [Next.js 15](https://nextjs.org/)
+- 🎨 [Tailwind CSS](https://tailwindcss.com/)
+- 💾 [Drizzle ORM](https://orm.drizzle.team/) + PostgreSQL
+- ⚡️ [Zustand](https://zustand-demo.pmnd.rs/) for state management
+- 🧩 [Radix UI](https://www.radix-ui.com/) components (Dialog, Tooltip, Select)
+- ✨ [Lucide React](https://lucide.dev/) for beautiful, minimal icons
+
+---
+
+## 🛠️ What Ichiman Does
+
+### ⏱️ Simple Skill Timer
+
+- Quick-select a skill from your saved list.
+- Tap to begin tracking—no manual input needed.
+- Use a **Pomodoro-style clock** to stay focused.
+- When the clock ends, **all running timers automatically stop**.
+
+### 🎯 Rank System (In Progress)
+
+A transparent, motivating rank system to see your journey at a glance:
+
+- **Bronze**: 0 hours  
+- **Silver**: 100 hours  
+- **Gold**: 500 hours  
+- **Platinum**: 1,000 hours  
+- **Diamond**: 5,000 hours  
+- **Master**: 10,000 hours
+
+Ranks update visually as you reach new milestones. Each skill tracks independently.
+
+### 📊 Point System (In Progress)
+
+Ichiman rewards your **commitment over time**, not streaks or pressure.
+
+Earn points for:
+- Hitting milestones (every 25% of a rank)
+- Showing up consistently (e.g., spaced sessions over time)
+- Maintaining balance (avoiding burnout by pacing yourself)
+
+### 👥 Healthy Social Comparison (Planned)
+
+- Compare progress with friends in a **non-toxic** way.
+- No streaks. No shame. Just context.
+- See how far you've come together—not how perfectly you perform daily.
+
+---
+
+## 🧩 UI & Design Overview
+
+From the prototype:
+
+- 🔧 **Skill Panel**: View and manage your tracked skills
+- 🔽 **Dropdown Hierarchy**: Expand a general skill (e.g. "Programming") into sub-skills (e.g. "Python", "Rust")
+- 🕒 **Timer & Clock UI**: One Pomodoro-style session timer that governs all ongoing recordings
+- 🎖️ **Visual Rank Progression**: Skill bars change color as you climb ranks
+- 📄 **Settings/Profile**: Access to preferences and user config
+
+![UI Sketch](./Screenshot%202025-07-10%20at%2018.04.33.png)
+
+---
+
+## 🔍 Why Ichiman?
+
+Most productivity tools focus on “showing up every day.” While that’s fine in theory, it fails in practice. We all have life, interruptions, off-days—and **we shouldn’t be punished for that**.
+
+Ichiman exists to support people who:
+
+- Want to get better at something over the long term
+- Hate the pressure of losing streaks
+- Care more about **total time spent learning** than flashy badges
+- Want to **feel** their progress—slowly but surely
+
+---
+
+## 📅 Upcoming Features
+
+- [ ] Full authentication & profile syncing
+- [ ] Real-time social skill comparison (private & friend groups)
+- [ ] Mobile-first UI
+- [ ] Exportable skill logs
+- [ ] Custom time goals for skills (not just 10,000 hrs)
+
+---
+
+## 🤝 Contributing
+
+This is a passion project, and contributions are welcome—especially around backend performance, UI feedback, and thoughtful feature ideas.
+
+> Let’s build a healthier relationship with mastery—together.
+
+---
+
+## 📜 License
+## License
+
+© 2025 [Alan Napieralski]. All rights reserved.
+
+Ichiman is a personal project currently in development. You may **not** use, copy, modify, distribute, or reproduce any part of this project without explicit written permission from the author.
