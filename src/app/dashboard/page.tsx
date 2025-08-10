@@ -1,17 +1,9 @@
 import ClientSkillsPage from "@/components/client-skills-page"
 import { fetchSkills } from "@/lib/skills/utils"
-
-export type Skill = {
-    id: number,
-    name: string,
-    timeCount: number
-    userId: number
-    parentId?: number
-    subSkill?: Skill[]
-}
+import type { Skill } from "@/models/skill"
 
 const SkillsPage = async () => {
-    const skills = await fetchSkills()
+    const skills: Skill[] = await fetchSkills()
 
     return (
         <ClientSkillsPage initialSkills={skills} />

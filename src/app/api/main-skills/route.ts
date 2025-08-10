@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { skillsTable } from "@/db/schema";
-import { eq } from "drizzle-orm";
+// import { eq } from "drizzle-orm";
 
-import type { Skill } from "@/app/skills/dashboard/page";
+import type { Skill } from "@/models/skill";
 
 const db = drizzle(process.env.DATABASE_URL!);
 
@@ -42,21 +42,22 @@ export async function GET() {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { name, userId, timeCount, parentId } = body;
+        const { name, userId, timeCount, parentId, description } = body;
 
         if (!name || !userId || timeCount == null) {
             return NextResponse.json({ error: "Missing fields" }, { status: 400 });
         }
 
-        if (Number(timeCount) > 2, 147, 483, 647) {
+        if (Number(timeCount) > 2147483647) {
             return NextResponse.json({ error: "Value of the Time count is too big" }, { status: 400 });
         }
 
         const newSkill = {
             name,
             userId,
-            timeCount,
-            parentId
+            timeCount: Number(timeCount),
+            parentId,
+            description
         };
 
         const result = await db.insert(skillsTable).values(newSkill).returning();

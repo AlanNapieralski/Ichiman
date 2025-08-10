@@ -1,4 +1,4 @@
-import { Skill } from '@/app/dashboard/page'
+import { Skill } from '@/models/skill'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 

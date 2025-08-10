@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Skill } from "@/app/dashboard/page"
+import type { Skill } from "@/models/skill"
 
 interface AddSkillPopupProps {
     skills: Skill[]
@@ -29,6 +29,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
     const [name, setName] = useState("")
     const [timeCount, setTimeCount] = useState("")
     const [parentSkill, setParentSkill] = useState("")
+    const [description, setDescription] = useState("")
     const [nameError, setNameError] = useState("")
     const [timeCountError, setTimeCountError] = useState("")
     const [loading, setLoading] = useState(false)
@@ -45,7 +46,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
             setTimeCountError("Time must be a number");
             return;
         }
-        if (Number(timeCount) > 2, 147, 483, 647) {
+        if (Number(timeCount) > 2147483647) {
             setTimeCountError("The number you have provided is too big")
             return;
         }
@@ -67,7 +68,8 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
                     name: name.trim(),
                     userId: 1,
                     timeCount: timeCount.trim() || 0,
-                    parentId: skills.find(skill => skill.name === parentSkill)?.id ?? null
+                    parentId: skills.find(skill => skill.name === parentSkill)?.id ?? null,
+                    description: description.trim() || undefined
                 }),
             });
 
@@ -78,6 +80,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
             setName("");
             setTimeCount("");
             setParentSkill("");
+            setDescription("")
             setOpen(false);
         } catch (err) {
             console.error("Error posting skill:", err);
@@ -94,6 +97,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
         setTimeCount("")
         setNameError("")
         setParentSkill("")
+        setDescription("")
         setOpen(false)
     }
 
@@ -156,12 +160,21 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
                                 </SelectContent>
                             </Select>
                         </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="description">Description (optional)</Label>
+                            <Input
+                                id="description"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Short notes or purpose"
+                            />
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={handleCancel}>
                             Cancel
                         </Button>
-                        <Button type="submit">Add Skill</Button>
+                        <Button type="submit" disabled={loading}>{loading ? "Adding..." : "Add Skill"}</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

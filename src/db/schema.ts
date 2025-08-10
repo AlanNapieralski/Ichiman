@@ -1,4 +1,4 @@
-import { integer, pgTable, varchar, serial, unique } from "drizzle-orm/pg-core";
+import { integer, pgTable, varchar, serial, unique, foreignKey, text } from "drizzle-orm/pg-core";
 
 // Users table
 export const usersTable = pgTable("users", {
@@ -15,9 +15,13 @@ export const skillsTable = pgTable("skills", {
         .notNull(),
     timeCount: integer("time_count")
         .notNull(),
-    parentId: integer("parent_id")
-        .references(() => skillsTable.id, { onDelete: "cascade" }),
+    parentId: integer("parent_id"),
+    description: text("description"),
 }, (table) => ({
     uniqueNamePerUser: unique().on(table.userId, table.name),
+    parentIdFk: foreignKey({
+        columns: [table.parentId],
+        foreignColumns: [table.id],
+    }).onDelete("cascade"),
 })
 )

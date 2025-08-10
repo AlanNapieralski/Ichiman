@@ -31,7 +31,7 @@ export const rankData = {
 
 
 // highest first
-export const rankDataArr = Object.entries(rankData).filter(([name, _]) => name !== 'loading').sort(
+export const rankDataArr = Object.entries(rankData).filter(([name]) => name !== 'loading').sort(
     ([, a], [, b]) => b.goal - a.goal
 ) as [Rank, { goal: number; nextRank: Rank }][]
 

@@ -1,4 +1,4 @@
-import { Skill } from "@/app/skills/dashboard/page";
+import type { Skill } from "@/models/skill";
 
 export async function fetchSkills(): Promise<Skill[]> {
   const res = await fetch("http://localhost:3000/api/main-skills", {

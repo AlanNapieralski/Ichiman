@@ -1,5 +1,5 @@
 'use client'
-import { Skill } from "@/app/dashboard/page"
+import { Skill } from "@/models/skill"
 import { useTimerStore } from "@/hooks/timerStore"
 import { Rank, rankDataArr } from "@/models/RankToProgressMap"
 import { progressFillClassMap } from "@/models/progressBarData"
@@ -26,7 +26,7 @@ function formatTime(seconds: number): string {
 }
 
 function getRank(timeCount: number): Rank {
-    const rank = rankDataArr.find(([_, obj]) => timeCount >= obj.goal)
+    const rank = rankDataArr.find(([, obj]) => timeCount >= obj.goal)
     if (!rank)
         return 'loading'
 
@@ -63,8 +63,8 @@ const ProgressPanel = ({ skill, className = "" }: ProgressPanelProps) => {
     }
 
     const updateProgressFill = (rank: Rank) => {
-        const nextRank = rankDataArr.find(([name, _]) => rank === name)?.[1]?.nextRank
-        const upperBound = rankDataArr.find(([name, _]) => name === nextRank)?.[1].goal
+        const nextRank = rankDataArr.find(([name]) => rank === name)?.[1]?.nextRank
+        const upperBound = rankDataArr.find(([name]) => name === nextRank)?.[1]?.goal
 
         if (nextRank === null) {
             setClampedProgress(100) // master
