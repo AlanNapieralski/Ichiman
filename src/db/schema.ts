@@ -7,7 +7,7 @@ export const usersTable = pgTable("users", {
 });
 
 // Main skills table
-export const skillsTable = pgTable("skills", {
+export const skillsTable = pt gTable("skills", {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 255 }).notNull(),
     userId: integer("user_id")
