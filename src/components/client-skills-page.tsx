@@ -3,7 +3,7 @@ import { useState } from "react"
 import AddSkillPopup from "@/components/add-skill-popup"
 import { useEffect } from "react"
 import { useTimerStore } from "@/hooks/timerStore"
-import ProgressPanel from "@/components/ui/progress-panel"
+import { SkillTimerCard } from "@/components/ui/skill-card"
 import type { Skill } from "@/models/skill"
 
 interface Props {
@@ -31,7 +31,7 @@ export default function ClientSkillsPage({ initialSkills }: Props) {
                 {skills
                     .filter(skill => !skill.parentId)
                     .map(skill => (
-                        <ProgressPanel key={skill.id} skill={skill} className="h-20" />
+                        <SkillTimerCard key={skill.id} skill={skill} />
                     ))}
             </div>
         </div>

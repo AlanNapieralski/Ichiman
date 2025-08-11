@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { skillsTable } from "@/db/schema";
 import type { Skill } from "@/models/skill";
-import ProgressPanel from "@/components/ui/progress-panel";
+import { SkillTimerCard } from "@/components/ui/skill-card";
 import SkillActions from "@/components/ui/skill-actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -151,7 +151,7 @@ const SkillPage = async ({ params }: PageProps) => {
                 </ol>
             </nav>
             <div className="flex flex-col gap-3">
-                <ProgressPanel skill={skill} className="h-24" />
+                <SkillTimerCard skill={skill} />
                 <SkillActions skill={skill} />
             </div>
             {/* Description */}

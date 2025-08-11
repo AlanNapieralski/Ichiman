@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import ProgressPanel from '../progress-panel'
+import { SkillTimerCard } from '../../skill-card'
 import { useTimerStore } from '@/hooks/timerStore'
 import type { Skill } from '@/models/skill'
 
@@ -16,7 +16,7 @@ function createSkill(partial: Partial<Skill> = {}): Skill {
   }
 }
 
-describe('ProgressPanel', () => {
+describe('SkillTimerCard', () => {
   beforeEach(() => {
     const { getState, setState } = useTimerStore
     const timers = {}
@@ -25,7 +25,7 @@ describe('ProgressPanel', () => {
 
   it('renders skill name and initial time', () => {
     const skill = createSkill({ name: 'Guitar', timeCount: 0 })
-    render(<ProgressPanel skill={skill} />)
+    render(<SkillTimerCard skill={skill} />)
 
     expect(screen.getByText('Guitar')).toBeInTheDocument()
     expect(screen.getByText(/00:00 min/)).toBeInTheDocument()
@@ -43,7 +43,7 @@ describe('ProgressPanel', () => {
       subSkill: [childSkill],
     }
 
-    render(<ProgressPanel skill={parentSkill} />)
+    render(<SkillTimerCard skill={parentSkill} />)
 
     // Click parent panel to start
     const buttons = screen.getAllByRole('button')

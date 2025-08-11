@@ -9,6 +9,7 @@ type Timer = {
     isRunning: boolean
     lastStartedAt: number | null
     parentId: number | null
+    isBlocked?: boolean
 }
 
 interface TimerStore {
