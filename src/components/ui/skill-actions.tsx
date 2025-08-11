@@ -16,7 +16,7 @@ export default function SkillActions({ skill }: SkillActionsProps) {
 
   useEffect(() => {
     if (!timer) {
-      activateTimer(skill.id, skill, skill.timeCount)
+      activateTimer(skill.id, skill, skill.timeCount, skill.parentId)
       stopTimer(skill.id) // initialize but not running by default here
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
