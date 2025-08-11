@@ -50,11 +50,11 @@ export const useTimerStore = create<TimerStore>()(
                     isBlocked: false
                 }
 
-                console.log(timers[id])
                 // if is a child and running, block the parent
                 const parentId = timers[id].parentId
                 if (parentId) {
-                    timers[parentId].isBlocked = true
+                    if (timers[parentId])
+                        timers[parentId].isBlocked = true
                     // if is a parent and running, block every child
                 } else if (!parentId) {
                     Object.values(timers).filter(timer => timer.parentId == id).forEach(child => child.isBlocked = true)
@@ -82,7 +82,8 @@ export const useTimerStore = create<TimerStore>()(
                 if (parentId) {
                     const children = Object.values(timers).filter(timer => timer.parentId === parentId)
                     if (children.every(child => !child.isRunning)) {
-                        timers[parentId].isBlocked = false
+                        if (timers[parentId])
+                            timers[parentId].isBlocked = false
                     }
                     // if is a parent and stopped, unblock every child
                 } else if (!parentId) {
@@ -107,6 +108,7 @@ export const useTimerStore = create<TimerStore>()(
                 const timers = { ...get().timers };
                 if (timers[id]?.skill) {
                     timers[id].skill.parentId = parentId
+                    timers[id].parentId = parentId
                 }
                 set({ timers });
             },

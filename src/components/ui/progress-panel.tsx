@@ -1,28 +1,15 @@
 'use client'
 import { Skill } from "@/models/skill"
+import { calculateClampedProgress } from "@/utils/calculateClampedProgress"
 import { useTimerStore } from "@/hooks/timerStore"
 import { Rank, rankDataArr } from "@/models/RankToProgressMap"
 import { progressFillClassMap } from "@/models/progressBarData"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
+import { formatTime } from "@/utils/formatTime"
 
 export interface ProgressPanelProps {
     skill: Skill
     className?: string
-}
-
-function formatTime(seconds: number): string {
-    if (seconds < 3600) {
-        const mins = Math.floor(seconds / 60)
-        const secs = seconds % 60
-        return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")} min`
-    } else if (seconds < 360000) {
-        const hours = Math.floor(seconds / 3600)
-        const mins = Math.floor((seconds % 3600) / 60)
-        return `${String(hours).padStart(2, "0")} h ${String(mins).padStart(2, "0")} m`
-    } else {
-        const hours = Math.floor(seconds / 3600)
-        return `${hours.toLocaleString()} h`
-    }
 }
 
 function getRank(timeCount: number): Rank {
@@ -37,20 +24,20 @@ function getRank(timeCount: number): Rank {
 const ProgressPanel = ({ skill, className = "" }: ProgressPanelProps) => {
     const id = skill.id
     const subSkills = skill.subSkill
-    const isParent = subSkills ? true : false
+    const isParent = Boolean(subSkills && subSkills.length > 0)
 
     const [isActive, setIsActive] = useState(false)
-    const [isRendered, setIsRendered] = useState(false)
     const [dropdown, setDropdown] = useState(false)
-    const [clampedProgress, setClampedProgress] = useState(0)
+    const [displayTime, setDisplayTime] = useState(0)
 
     const { activateTimer, getChildTime, startTimer, stopTimer, setParentId } = useTimerStore()
     const timer = useTimerStore((state) => state.timers[id])
     const time = useTimerStore((state) => state.timers[id]?.time || 0)
     const isBlocked = useTimerStore((state) => state.timers[id]?.isBlocked || false)
 
-    const [rank, setRank] = useState<Rank>("loading")
-    const [displayTime, setDisplayTime] = useState(time)
+    const rank: Rank = useMemo(() => getRank(time), [time])
+
+    const clampedProgress = useMemo(() => calculateClampedProgress(rank, time), [rank, time])
 
     const onPanelClick = () => {
         setIsActive((prev) => !prev)
@@ -62,45 +49,28 @@ const ProgressPanel = ({ skill, className = "" }: ProgressPanelProps) => {
         }
     }
 
-    const updateProgressFill = (rank: Rank) => {
-        const nextRank = rankDataArr.find(([name]) => rank === name)?.[1]?.nextRank
-        const upperBound = rankDataArr.find(([name]) => name === nextRank)?.[1]?.goal
-
-        if (nextRank === null) {
-            setClampedProgress(100) // master
-            return
-        }
-        if (upperBound === undefined) { // time has not started yet
-            setClampedProgress(0)
-            return
-        }
-
-        setClampedProgress((time / upperBound) * 100)
-    }
-
     useEffect(() => {
         activateTimer(id, skill, skill.timeCount)
-        if (!isParent && skill.parentId)
-            setParentId(id, skill.parentId)
-    }, [])
+        if (!isParent && skill.parentId) setParentId(id, skill.parentId)
+        return () => {
+            // ensure timers are stopped to avoid touching undefined parents in tests
+            stopTimer(id)
+        }
+    }, [activateTimer, id, isParent, setParentId, skill, stopTimer])
 
     useEffect(() => {
         if (isActive) {
             startTimer(id)
-        }
-        if (!isActive) {
+        } else {
             stopTimer(id)
         }
-    }, [isActive])
+    }, [id, isActive, startTimer, stopTimer])
 
     useEffect(() => {
-        if (!timer) return;
+        if (!timer) return
 
-        setRank(getRank(time))
-        // Display Time initialisation
         const updateDisplayTime = () => {
             const initTime = isParent ? timer.time + getChildTime(id) : timer.time
-
             if (timer.isRunning) {
                 const now = Date.now()
                 const elapsed = Math.floor((now - (timer.lastStartedAt ?? now)) / 1000)
@@ -110,20 +80,11 @@ const ProgressPanel = ({ skill, className = "" }: ProgressPanelProps) => {
             }
         }
 
-        if (!isRendered) {
-            setIsRendered(true)
-            updateDisplayTime()
-        }
-
-        const interval = setInterval(() => updateDisplayTime(), 1000)
-
+        updateDisplayTime()
+        const interval = setInterval(updateDisplayTime, 1000)
         return () => clearInterval(interval)
-    }, [timer])
+    }, [getChildTime, id, isParent, timer])
 
-
-    useEffect(() => {
-        updateProgressFill(rank)
-    }, [displayTime])
 
     return (
         <div className="w-full">

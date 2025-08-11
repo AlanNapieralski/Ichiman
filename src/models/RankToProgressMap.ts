@@ -4,7 +4,7 @@ export const rankData = {
         nextRank: null
     },
     bronze: {
-        goal: 0,
+       goal: 0,
         nextRank: 'silver',
     },
     silver: {
