@@ -25,7 +25,7 @@ const ProgressPanel = ({ skill, className = "" }: ProgressPanelProps) => {
     const id = skill.id
     const subSkills = skill.subSkill
     const isParent = Boolean(subSkills && subSkills.length > 0)
-    const parentId = isParent ? null : skill.parentId
+const parentId = isParent ? null : skill.parentId
 
     const [dropdown, setDropdown] = useState(false)
     const [displayTime, setDisplayTime] = useState(0)
