@@ -8,56 +8,60 @@ type Timer = {
     time: number
     isRunning: boolean
     lastStartedAt: number | null
-    isBlocked: boolean
     parentId: number | null
 }
 
 interface TimerStore {
     timers: Record<number, Timer>
-    activateTimer: (id: number, skill: Skill, initTime: number) => void
+    activateTimer: (id: number, skill: Skill, initTime: number, parentId: number | null) => void
     startTimer: (id: number) => void
     stopTimer: (id: number) => void
     getTime: (id: number) => number
     getChildTime: (id: number) => number
-    setParentId: (id: number, parentId: number) => void
     tick: () => void
+    syncTimersWithSkills: (skills: Skill[]) => void
 }
 
 export const useTimerStore = create<TimerStore>()(
     persist(
         (set, get) => ({
             timers: {},
-            activateTimer: (id, skill, initTime) => {
+            activateTimer: (id, skill, initTime, parentId) => {
                 const timers = { ...get().timers }
 
                 timers[id] = {
-                    ...(timers[id] || { id, time: initTime, skill: skill, isRunning: false, lastStartedAt: null, parentId: null }),
-                    isRunning: true,
+                    ...(timers[id] || { id, time: initTime, skill: skill, isRunning: false, lastStartedAt: null, parentId }),
                     lastStartedAt: Date.now(),
-                    isBlocked: false
                 }
-
 
                 set({ timers })
             },
             startTimer: (id) => {
                 const timers = { ...get().timers }
 
+                // check if we should start
+                const parentId = timers[id].parentId
+                // if is a child
+                if (parentId) {
+                    // if the child's parent is not running
+                    if (timers[parentId]?.isRunning) {
+                        timers[parentId].isRunning = false
+                    }
+                    // if is a parent
+                } else if (!parentId) {
+                    const isHavingRunningChildren = Object.values(timers).some(timer => timer.parentId === id && timer.isRunning)
+
+                    // deactivate childrem
+                    if (isHavingRunningChildren) {
+                        Object.values(timers).forEach(timer => timer.parentId === id ? timer.isRunning = false : null)
+                    }
+
+                }
+
                 timers[id] = {
                     ...(timers[id]),
                     isRunning: true,
                     lastStartedAt: Date.now(),
-                    isBlocked: false
-                }
-
-                // if is a child and running, block the parent
-                const parentId = timers[id].parentId
-                if (parentId) {
-                    if (timers[parentId])
-                        timers[parentId].isBlocked = true
-                    // if is a parent and running, block every child
-                } else if (!parentId) {
-                    Object.values(timers).filter(timer => timer.parentId == id).forEach(child => child.isBlocked = true)
                 }
 
                 set({ timers })
@@ -66,29 +70,14 @@ export const useTimerStore = create<TimerStore>()(
                 const timers = { ...get().timers }
                 const timer = timers[id]
 
-                if (!timer)
+                if (!timer || !timer?.isRunning)
                     return
 
-                if (timer?.isRunning) {
-                    const now = Date.now()
-                    const elapsed = Math.floor((now - (timer.lastStartedAt ?? now)) / 1000)
-                    timer.time += elapsed
-                    timer.isRunning = false
-                    timer.lastStartedAt = null
-                }
-
-                // if is a child and stopped, and every child has stopped, unblock the parent
-                const parentId = timers[id].parentId
-                if (parentId) {
-                    const children = Object.values(timers).filter(timer => timer.parentId === parentId)
-                    if (children.every(child => !child.isRunning)) {
-                        if (timers[parentId])
-                            timers[parentId].isBlocked = false
-                    }
-                    // if is a parent and stopped, unblock every child
-                } else if (!parentId) {
-                    Object.values(timers).filter(timer => timer.parentId == id).forEach(child => child.isBlocked = false)
-                }
+                const now = Date.now()
+                const elapsed = Math.floor((now - (timer.lastStartedAt ?? now)) / 1000)
+                timer.time += elapsed
+                timer.isRunning = false
+                timer.lastStartedAt = null
 
                 set({ timers })
             },
@@ -104,20 +93,28 @@ export const useTimerStore = create<TimerStore>()(
                 // force UI update by triggering a dummy state change (if needed)
                 set(state => ({ timers: { ...state.timers } }))
             },
-            setParentId: (id: number, parentId: number) => {
-                const timers = { ...get().timers };
-                if (timers[id]?.skill) {
-                    timers[id].skill.parentId = parentId
-                    timers[id].parentId = parentId
+            syncTimersWithSkills: (skills: Skill[]) => {
+                const flatten = (roots: Skill[]): number[] => {
+                    const ids: number[] = []
+                    const stack: Skill[] = [...roots]
+                    while (stack.length > 0) {
+                        const s = stack.pop()!
+                        ids.push(s.id)
+                        if (s.subSkill && s.subSkill.length > 0) stack.push(...s.subSkill)
+                    }
+                    return ids
                 }
-                set({ timers });
-            },
-            setBlocked: (id: number, isBlocked: boolean) => {
-                const timers = { ...get().timers };
-                if (timers[id]) {
-                    timers[id].isBlocked = isBlocked
+
+                const allowedIds = new Set<number>(flatten(skills))
+                const current = get().timers
+                const pruned: Record<number, Timer> = {}
+                for (const [key, timer] of Object.entries(current)) {
+                    const id = Number(key)
+                    if (allowedIds.has(id)) {
+                        pruned[id] = timer
+                    }
                 }
-                set({ timers })
+                set({ timers: pruned })
             },
             getTime: (id: number) => get().timers[id]?.time || 0,
             setTime: (id: number, time: number) => {

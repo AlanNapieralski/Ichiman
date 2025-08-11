@@ -3,7 +3,7 @@ export type Skill = {
   name: string;
   timeCount: number;
   userId: number;
-  parentId?: number;
+  parentId: number | null;
   description?: string;
   subSkill?: Skill[];
 };

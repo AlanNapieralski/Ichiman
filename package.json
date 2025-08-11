@@ -8,7 +8,13 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "db:reset:skills": "tsx scripts/reset-skills.ts",
+    "db:seed:skills": "tsx scripts/seed-skills.ts"
+  },
+  "bin": {
+    "reset-skills": "scripts/reset-skills.ts",
+    "seed-skills": "scripts/seed-skills.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",

@@ -1,4 +1,4 @@
-import { integer, pgTable, varchar, serial, unique, foreignKey, text } from "drizzle-orm/pg-core";
+import { integer, pgTable, varchar, serial, unique, foreignKey } from "drizzle-orm/pg-core";
 
 // Users table
 export const usersTable = pgTable("users", {
@@ -16,7 +16,6 @@ export const skillsTable = pgTable("skills", {
     timeCount: integer("time_count")
         .notNull(),
     parentId: integer("parent_id"),
-    description: text("description"),
 }, (table) => ({
     uniqueNamePerUser: unique().on(table.userId, table.name),
     parentIdFk: foreignKey({

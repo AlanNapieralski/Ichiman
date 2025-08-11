@@ -25,23 +25,21 @@ const ProgressPanel = ({ skill, className = "" }: ProgressPanelProps) => {
     const id = skill.id
     const subSkills = skill.subSkill
     const isParent = Boolean(subSkills && subSkills.length > 0)
+    const parentId = isParent ? null : skill.parentId
 
-    const [isActive, setIsActive] = useState(false)
     const [dropdown, setDropdown] = useState(false)
     const [displayTime, setDisplayTime] = useState(0)
 
-    const { activateTimer, getChildTime, startTimer, stopTimer, setParentId } = useTimerStore()
+    const { activateTimer, getChildTime, startTimer, stopTimer } = useTimerStore()
     const timer = useTimerStore((state) => state.timers[id])
     const time = useTimerStore((state) => state.timers[id]?.time || 0)
-    const isBlocked = useTimerStore((state) => state.timers[id]?.isBlocked || false)
+    const isRunning = useTimerStore((state) => !!state.timers[id]?.isRunning)
 
     const rank: Rank = useMemo(() => getRank(time), [time])
 
     const clampedProgress = useMemo(() => calculateClampedProgress(rank, time), [rank, time])
 
-    const onPanelClick = () => {
-        setIsActive((prev) => !prev)
-    }
+    const toggle = () => (isRunning ? stopTimer(id) : startTimer(id));
 
     const onDropdown = () => {
         if (subSkills && subSkills.length > 0) {
@@ -50,21 +48,20 @@ const ProgressPanel = ({ skill, className = "" }: ProgressPanelProps) => {
     }
 
     useEffect(() => {
-        activateTimer(id, skill, skill.timeCount)
-        if (!isParent && skill.parentId) setParentId(id, skill.parentId)
+        activateTimer(id, skill, skill.timeCount, parentId)
         return () => {
             // ensure timers are stopped to avoid touching undefined parents in tests
             stopTimer(id)
         }
-    }, [activateTimer, id, isParent, setParentId, skill, stopTimer])
+    }, [activateTimer, id, isParent, parentId, skill, stopTimer])
 
     useEffect(() => {
-        if (isActive) {
+        if (isRunning) {
             startTimer(id)
         } else {
             stopTimer(id)
         }
-    }, [id, isActive, startTimer, stopTimer])
+    }, [id, isRunning, startTimer, stopTimer])
 
     useEffect(() => {
         if (!timer) return
@@ -91,7 +88,7 @@ const ProgressPanel = ({ skill, className = "" }: ProgressPanelProps) => {
             <div className={`w-full`}>
                 <div className={`flex relative gap-4 ${className}`}>
                     {/* Main panel container */}
-                    <button disabled={isBlocked} onClick={onPanelClick} className={`group relative w-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-xl border border-gray-200 hover:border-gray-300 active:border-gray-400 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md active:shadow-lg active:scale-[0.98] transform ${isActive ? 'border-red-500 border-4' : ''}`}>
+                    <button onClick={toggle} className={`group relative w-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-xl border border-gray-200 hover:border-gray-300 active:border-gray-400 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md active:shadow-lg active:scale-[0.98] transform ${isRunning ? 'border-red-500 border-4' : ''}`}>
                         {/* Progress fill */}
                         <div
                             className={`absolute top-0 left-0 h-full transition-all duration-300 ease-in-out rounded-xl ${progressFillClassMap[rank]}`}

@@ -50,9 +50,10 @@ async function fetchAllSkills(): Promise<Skill[]> {
 
 function findSkillBySlugInTree(trees: Skill[], slug: string): Skill | undefined {
     const queue: Skill[] = [...trees];
+    const normalized = slug.toLowerCase();
     while (queue.length > 0) {
         const current = queue.shift()!;
-        if (slugify(current.name) === slug) return current;
+        if (slugify(current.name) === normalized) return current;
         if (current.subSkill) queue.push(...current.subSkill);
     }
     return undefined;
