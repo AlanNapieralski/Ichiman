@@ -8,7 +8,7 @@ export const rankData = {
         nextRank: 'silver',
     },
     silver: {
-        goal: 360000, // 100 hours
+        goal: 36000, // 100 hours
         nextRank: 'gold',
     },
     gold: {

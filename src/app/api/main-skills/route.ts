@@ -14,7 +14,7 @@ function combineSkills(skills: Skill[]): Skill[] {
         .filter(skill => !skill.parentId)
         .map(skill => ({
             ...skill,
-            subSkill: subSkills.filter(subSkill => subSkill.parentId === skill.id)
+            subSkills: subSkills.filter(subSkill => subSkill.parentId === skill.id)
         }))
 
     return res

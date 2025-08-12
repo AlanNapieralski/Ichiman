@@ -23,7 +23,7 @@ function getRank(timeCount: number): Rank {
 
 const ProgressPanel = ({ skill, className = "" }: ProgressPanelProps) => {
     const id = skill.id
-    const subSkills = skill.subSkill
+    const subSkills = skill.subSkills
     const isParent = Boolean(subSkills && subSkills.length > 0)
     const parentId = isParent ? null : skill.parentId
 

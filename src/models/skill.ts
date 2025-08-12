@@ -5,5 +5,5 @@ export type Skill = {
   userId: number;
   parentId: number | null;
   description?: string;
-  subSkill?: Skill[];
+  subSkills?: Skill[];
 };

@@ -101,7 +101,7 @@ export const useTimerStore = create<TimerStore>()(
                     while (stack.length > 0) {
                         const s = stack.pop()!
                         ids.push(s.id)
-                        if (s.subSkill && s.subSkill.length > 0) stack.push(...s.subSkill)
+                        if (s.subSkills && s.subSkills.length > 0) stack.push(...s.subSkills)
                     }
                     return ids
                 }

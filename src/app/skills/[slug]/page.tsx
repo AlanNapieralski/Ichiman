@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { skillsTable } from "@/db/schema";
 import type { Skill } from "@/models/skill";
-import { SkillTimerCard } from "@/components/ui/skill-card";
+import { SkillCard } from "@/components/ui/skill-card";
 import SkillActions from "@/components/ui/skill-actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -22,7 +22,7 @@ function buildSkillTree(skills: Skill[]): Skill[] {
     const parentIdToChildren = new Map<number, Skill[]>();
 
     for (const skill of skills) {
-        idToSkill.set(skill.id, { ...skill, subSkill: undefined });
+        idToSkill.set(skill.id, { ...skill, subSkills: undefined });
         if (skill.parentId != null) {
             const list = parentIdToChildren.get(skill.parentId) ?? [];
             list.push(skill);
@@ -34,7 +34,7 @@ function buildSkillTree(skills: Skill[]): Skill[] {
         const children = parentIdToChildren.get(skill.id) ?? [];
         return {
             ...skill,
-            subSkill: children.map((child) => attachChildren(child)),
+            subSkills: children.map((child) => attachChildren(child)),
         };
     }
 
@@ -54,7 +54,7 @@ function findSkillBySlugInTree(trees: Skill[], slug: string): Skill | undefined 
     while (queue.length > 0) {
         const current = queue.shift()!;
         if (slugify(current.name) === normalized) return current;
-        if (current.subSkill) queue.push(...current.subSkill);
+        if (current.subSkills) queue.push(...current.subSkills);
     }
     return undefined;
 }
@@ -86,7 +86,7 @@ const SkillPage = async ({ params }: PageProps) => {
     }
 
     function totalTimeSeconds(root: Skill): number {
-        const childrenTime = (root.subSkill ?? []).reduce((sum, child) => sum + totalTimeSeconds(child), 0);
+        const childrenTime = (root.subSkills ?? []).reduce((sum, child) => sum + totalTimeSeconds(child), 0);
         return root.timeCount + childrenTime;
     }
 
@@ -151,7 +151,7 @@ const SkillPage = async ({ params }: PageProps) => {
                 </ol>
             </nav>
             <div className="flex flex-col gap-3">
-                <SkillTimerCard skill={skill} />
+                <SkillCard skill={skill} />
                 <SkillActions skill={skill} />
             </div>
             {/* Description */}
@@ -184,7 +184,7 @@ const SkillPage = async ({ params }: PageProps) => {
                 </div>
                 <div className="rounded-xl border border-gray-200 bg-white p-4">
                     <div className="text-xs uppercase text-gray-500">Subskills</div>
-                    <div className="mt-1 text-2xl font-semibold">{skill.subSkill?.length ?? 0}</div>
+                    <div className="mt-1 text-2xl font-semibold">{skill.subSkills?.length ?? 0}</div>
                     <div className="text-xs text-gray-500">ID #{skill.id} • User {skill.userId}</div>
                 </div>
             </section>
