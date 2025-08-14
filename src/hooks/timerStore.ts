@@ -46,7 +46,7 @@ export const useTimerStore = create<TimerStore>()(
                 if (parentId) {
                     // if the child's parent is not running
                     if (timers[parentId]?.isRunning) {
-                        timers[parentId].isRunning = false
+                        get().stopTimer(parentId)
                     }
                     // if is a parent
                 } else if (!parentId) {
@@ -54,7 +54,11 @@ export const useTimerStore = create<TimerStore>()(
 
                     // deactivate childrem
                     if (isHavingRunningChildren) {
-                        Object.values(timers).forEach(timer => timer.parentId === id ? timer.isRunning = false : null)
+                        Object.values(timers).forEach(timer => {
+                            if (timer.parentId === id && timer.isRunning) {
+                                get().stopTimer(timer.id)
+                            }
+                        })
                     }
 
                 }

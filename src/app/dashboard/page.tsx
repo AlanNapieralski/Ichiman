@@ -3,13 +3,13 @@
 import type React from "react"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Clock, Target, TrendingUp, Calendar, Plus } from "lucide-react"
+import { Clock, Target, TrendingUp, Calendar } from "lucide-react"
 import { useEffect, useState } from "react"
 import { SkillCard } from "@/components/ui/skill-card"
 import type { Skill } from "@/models/skill"
 import InfoCard from "@/components/ui/info-card"
 import SkillFilters from "@/components/ui/skill-filters"
+import AddSkillPopup from "@/components/add-skill-popup"
 
 
 const userStats = {
@@ -85,6 +85,12 @@ export default function Dashboard() {
     const [sortBy, setSortBy] = useState("hours")
     const [apiSkills, setApiSkills] = useState<Skill[]>([])
 
+    const refreshSkills = async () => {
+        const res = await fetch("/api/main-skills")
+        const updated = await res.json()
+        setApiSkills(updated)
+    }
+
     useEffect(() => {
         let cancelled = false
         const load = async () => {
@@ -109,10 +115,10 @@ export default function Dashboard() {
                         <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
                         <p className="text-gray-600 mt-1">Your journey of meaningful progress continues</p>
                     </div>
-                    <Button className="w-fit">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add New Skill
-                    </Button>
+                    <AddSkillPopup
+                        skills={apiSkills}
+                        onAddSkill={refreshSkills}
+                    />
                 </div>
 
                 {/* Stats Overview */}

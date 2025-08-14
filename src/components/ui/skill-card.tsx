@@ -9,7 +9,7 @@ import type { Skill } from "@/models/skill"
 import { useTimerStore } from "@/hooks/timerStore"
 import { Rank, rankDataArr } from "@/models/RankToProgressMap"
 import { calculateClampedProgress } from "@/utils/calculateClampedProgress"
-import { formatTime } from "@/utils/formatTime"
+import { formatTime } from "@/utils/time/formatTime"
 import SkillProgressBar from "@/components/ui/skill-progress-bar"
 import SkillCardDropdownItem from "./skillcard-dropdown-item"
 

@@ -5,7 +5,7 @@ import { useTimerStore } from "@/hooks/timerStore"
 import { Rank, rankDataArr } from "@/models/RankToProgressMap"
 import { progressFillClassMap } from "@/models/progressBarData"
 import { useState, useEffect, useMemo } from "react"
-import { formatTime } from "@/utils/formatTime"
+import { formatTime } from "@/utils/time/formatTime"
 
 export interface ProgressPanelProps {
     skill: Skill

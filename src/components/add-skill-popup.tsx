@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus } from "lucide-react"
+import { TimePicker } from "@/components/ui/TimePicker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Skill } from "@/models/skill"
 
@@ -27,13 +28,11 @@ interface AddSkillPopupProps {
 export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopupProps) {
     const [open, setOpen] = useState(false)
     const [name, setName] = useState("")
-    const [timeCount, setTimeCount] = useState("")
+    const [totalSeconds, setTotalSeconds] = useState(0)
     const [parentSkill, setParentSkill] = useState("")
     const [description, setDescription] = useState("")
     const [nameError, setNameError] = useState("")
-    const [timeCountError, setTimeCountError] = useState("")
     const [loading, setLoading] = useState(false)
-
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -42,14 +41,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
             setNameError("Name is required");
             return
         }
-        if (timeCount.trim() && isNaN(Number(timeCount))) {
-            setTimeCountError("Time must be a number");
-            return;
-        }
-        if (Number(timeCount) > 2147483647) {
-            setTimeCountError("The number you have provided is too big")
-            return;
-        }
+        
 
         if (skills.some(skill => skill.name === name)) {
             setNameError("Skill of that name already exists")
@@ -67,7 +59,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
                 body: JSON.stringify({
                     name: name.trim(),
                     userId: 1,
-                    timeCount: timeCount.trim() || 0,
+                    timeCount: totalSeconds,
                     parentId: skills.find(skill => skill.name === parentSkill)?.id ?? null,
                     description: description.trim() || undefined
                 }),
@@ -78,7 +70,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
 
             // Reset and close
             setName("");
-            setTimeCount("");
+            setTotalSeconds(0);
             setParentSkill("");
             setDescription("")
             setOpen(false);
@@ -94,7 +86,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
     const handleCancel = () => {
         // Reset form and close dialog
         setName("")
-        setTimeCount("")
+        setTotalSeconds(0)
         setNameError("")
         setParentSkill("")
         setDescription("")
@@ -109,7 +101,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
                     Add Skill
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>Add New Skill</DialogTitle>
                     <DialogDescription>Add a new skill to your profile. Fill in the details below.</DialogDescription>
@@ -132,19 +124,18 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
                             />
                             {nameError && <p className="text-sm text-destructive">{nameError}</p>}
                         </div>
+                        
                         <div className="grid gap-2">
-                            <Label htmlFor="timeSpent">Time Spent (optional)</Label>
-                            <Input
-                                id="timeSpent"
-                                value={timeCount}
-                                onChange={(e) => {
-                                    setTimeCount(e.target.value)
-                                    if (timeCountError) setTimeCountError("")
-                                }}
-                                placeholder="e.g., 2 years, 6 months, 100 hours"
+                            <Label htmlFor="timeSpent">Initial Time Spent (optional)</Label>
+                            <TimePicker 
+                                totalSeconds={totalSeconds}
+                                setTotalSeconds={setTotalSeconds}
                             />
-                            {timeCountError && <p className="text-sm text-destructive">{timeCountError}</p>}
+                            <p className="text-xs text-gray-500">
+                                Set the initial time you've already spent on this skill
+                            </p>
                         </div>
+                        
                         <div className="grid gap-2">
                             <Label htmlFor="parentSkill">Parent Skill (optional)</Label>
                             <Select value={parentSkill} onValueChange={setParentSkill}>
@@ -160,6 +151,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
                                 </SelectContent>
                             </Select>
                         </div>
+                        
                         <div className="grid gap-2">
                             <Label htmlFor="description">Description (optional)</Label>
                             <Input
