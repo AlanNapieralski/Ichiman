@@ -84,11 +84,20 @@ export default function Dashboard() {
     const [rankFilter, setRankFilter] = useState("all")
     const [sortBy, setSortBy] = useState("hours")
     const [apiSkills, setApiSkills] = useState<Skill[]>([])
+    const [expandedParentId, setExpandedParentId] = useState<number | null>(null)
 
-    const refreshSkills = async () => {
+    const refreshSkills = async (newSkillParentId?: number) => {
         const res = await fetch("/api/main-skills")
         const updated = await res.json()
         setApiSkills(updated)
+
+        // If a new skill was added, and is a child, expand the parent for rerender purposes
+        if (newSkillParentId) {
+            const parentComponent: Skill = updated.find((skill: Skill) => skill.id === newSkillParentId)
+            if (parentComponent) {
+                setExpandedParentId(parentComponent.id)
+            }
+        }
     }
 
     useEffect(() => {
@@ -147,7 +156,13 @@ export default function Dashboard() {
 
                     <div className="space-y-3">
                         {apiSkills.map(skill => {
-                            return <SkillCard key={skill.id} skill={skill} />
+                            return (
+                                <SkillCard
+                                    key={skill.id}
+                                    skill={skill}
+                                    forceExpanded={skill.id === expandedParentId}
+                                />
+                            )
                         })
                         }
                     </div>

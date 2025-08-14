@@ -17,9 +17,11 @@ type SkillCardPropsType = {
     skill: Skill
     version?: "original" | "dropdown"
     className?: string
+    isNewlyAdded?: boolean
+    forceExpanded?: boolean
 }
 
-export function SkillCard({ skill, version = "original", className = "" }: SkillCardPropsType) {
+export function SkillCard({ skill, version = "original", className = "", forceExpanded = false }: SkillCardPropsType) {
     const id = skill.id
     const isParent = Boolean(skill.subSkills && skill.subSkills.length > 0)
 
@@ -68,11 +70,18 @@ export function SkillCard({ skill, version = "original", className = "" }: Skill
         return () => clearInterval(interval)
     }, [getChildTime, id, isParent, timer])
 
+
+    // Auto-expand if this is the parent of a newly added skill
+    useEffect(() => {
+        if (forceExpanded && isParent) {
+            setExpanded(true)
+        }
+    }, [forceExpanded, isParent])
+
     return (
         <>
             <Card
-                className={`hover:shadow-md transition-all duration-300 cursor-pointer relative overflow-hidden ${timer?.isRunning ? "scale-[1.02] shadow-lg ring-2 ring-blue-200" : ""
-                    } ${className}`}
+                className={`hover:shadow-md transition-all duration-300 cursor-pointer relative overflow-hidden ${timer?.isRunning ? "scale-[1.02] shadow-lg ring-2 ring-blue-200" : ""} ${className}`}
                 onClick={onToggleRun}
             >
                 <CardContent className="p-4 relative z-10">

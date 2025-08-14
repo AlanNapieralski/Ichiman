@@ -22,7 +22,7 @@ import type { Skill } from "@/models/skill"
 
 interface AddSkillPopupProps {
     skills: Skill[]
-    onAddSkill?: () => void
+    onAddSkill?: (newSkillId?: number) => void
 }
 
 export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopupProps) {
@@ -41,7 +41,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
             setNameError("Name is required");
             return
         }
-        
+
 
         if (skills.some(skill => skill.name === name)) {
             setNameError("Skill of that name already exists")
@@ -65,7 +65,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
                 }),
             });
 
-            const result = await response.json();
+            const result: Skill = await response.json();
             console.log("Skill successfully added:", result);
 
             // Reset and close
@@ -74,13 +74,15 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
             setParentSkill("");
             setDescription("")
             setOpen(false);
+
+            onAddSkill?.(result?.parentId ?? undefined);
         } catch (err) {
             console.error("Error posting skill:", err);
+            // Call the callback without ID on error
+            onAddSkill?.();
         } finally {
             setLoading(false);
         }
-
-        onAddSkill?.()
     };
 
     const handleCancel = () => {
@@ -124,10 +126,10 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
                             />
                             {nameError && <p className="text-sm text-destructive">{nameError}</p>}
                         </div>
-                        
+
                         <div className="grid gap-2">
                             <Label htmlFor="timeSpent">Initial Time Spent (optional)</Label>
-                            <TimePicker 
+                            <TimePicker
                                 totalSeconds={totalSeconds}
                                 setTotalSeconds={setTotalSeconds}
                             />
@@ -135,7 +137,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
                                 Set the initial time you've already spent on this skill
                             </p>
                         </div>
-                        
+
                         <div className="grid gap-2">
                             <Label htmlFor="parentSkill">Parent Skill (optional)</Label>
                             <Select value={parentSkill} onValueChange={setParentSkill}>
@@ -151,7 +153,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
                                 </SelectContent>
                             </Select>
                         </div>
-                        
+
                         <div className="grid gap-2">
                             <Label htmlFor="description">Description (optional)</Label>
                             <Input
