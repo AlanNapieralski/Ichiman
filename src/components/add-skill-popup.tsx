@@ -22,7 +22,7 @@ import type { Skill } from "@/models/skill"
 
 interface AddSkillPopupProps {
     skills: Skill[]
-    onAddSkill?: (newSkillId?: number) => void
+    onAddSkill?: (newSkillParentId?: number) => void
 }
 
 export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopupProps) {
@@ -75,6 +75,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
             setDescription("")
             setOpen(false);
 
+            // Call the callback with the new skill ID
             onAddSkill?.(result?.parentId ?? undefined);
         } catch (err) {
             console.error("Error posting skill:", err);
@@ -134,7 +135,7 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
                                 setTotalSeconds={setTotalSeconds}
                             />
                             <p className="text-xs text-gray-500">
-                                Set the initial time you've already spent on this skill
+                                Set the initial time you&aposve already spent on this skill
                             </p>
                         </div>
 

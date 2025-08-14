@@ -1,6 +1,6 @@
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import SkillsPage from "./dashboard/page"
+import Dashboard from "./dashboard/page"
 import AppSidebar from "@/components/app-sidebar"
 
 export default function Page() {
@@ -12,7 +12,7 @@ export default function Page() {
                     <SidebarTrigger className="-ml-1" />
                     <Separator orientation="vertical" className="mr-2 h-4" />
                 </header>
-                <SkillsPage />
+                <Dashboard />
             </SidebarInset>
         </SidebarProvider>
     )

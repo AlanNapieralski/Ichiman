@@ -37,10 +37,3 @@ export default function ClientSkillsPage({ initialSkills }: Props) {
         </div>
     )
 }
-
-function SyncTimers({ skills, onSync }: { skills: Skill[]; onSync: (skills: Skill[]) => void }) {
-    useEffect(() => {
-        onSync(skills)
-    }, [skills, onSync])
-    return null
-}

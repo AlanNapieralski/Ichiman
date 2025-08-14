@@ -21,42 +21,50 @@ type SkillCardPropsType = {
     forceExpanded?: boolean
 }
 
+
+
+function getRank(timeCount: number): Rank {
+    const entry = rankDataArr.find(([, obj]) => timeCount >= obj.goal)
+    return entry ? entry[0] : "loading"
+}
+
 export function SkillCard({ skill, version = "original", className = "", forceExpanded = false }: SkillCardPropsType) {
     const id = skill.id
     const isParent = Boolean(skill.subSkills && skill.subSkills.length > 0)
 
     const [expanded, setExpanded] = useState(false)
     const [displayTime, setDisplayTime] = useState(0)
+    const [sessionDisplayTime, setSessionDisplayTime] = useState(0)
 
     const { activateTimer, getChildTime, startTimer, stopTimer } = useTimerStore()
     const timer = useTimerStore((state) => state.timers[id])
     const time = useTimerStore((state) => state.timers[id]?.time || 0)
-
-    function getRank(timeCount: number): Rank {
-        const entry = rankDataArr.find(([, obj]) => timeCount >= obj.goal)
-        return entry ? entry[0] : "loading"
-    }
+    const isRunning = useTimerStore((state) => state.timers[id]?.isRunning || null)
+    const lastSession = useTimerStore((state) => state.timers[id]?.lastSession || 0)
 
     const rank: Rank = useMemo(() => getRank(time), [time])
     const clampedProgress = useMemo(() => calculateClampedProgress(rank, time), [rank, time])
 
     const onToggleRun = () => {
-        if (!timer?.isRunning) startTimer(id)
+        if (!isRunning) startTimer(id)
         else stopTimer(id)
     }
 
     useEffect(() => {
-        activateTimer(id, skill, skill.timeCount, skill.parentId)
-        return () => {
-            stopTimer(id)
+        // Only activate timer if it doesn't exist yet
+        if (!timer) {
+            activateTimer(id, skill, skill.timeCount, skill.parentId)
         }
-    }, [activateTimer, id, skill, stopTimer])
+        return () => {
+            // Don't stop timer on unmount - let it persist
+        }
+    }, [activateTimer, id, skill, timer])
 
     useEffect(() => {
         if (!timer) return
         const updateDisplayTime = () => {
             const initTime = isParent ? timer.time + getChildTime(id) : timer.time
-            if (timer.isRunning) {
+            if (isRunning) {
                 const now = Date.now()
                 const elapsed = Math.floor((now - (timer.lastStartedAt ?? now)) / 1000)
                 setDisplayTime(initTime + elapsed)
@@ -64,11 +72,28 @@ export function SkillCard({ skill, version = "original", className = "", forceEx
                 setDisplayTime(initTime)
             }
         }
-        updateDisplayTime()
-        const interval = setInterval(updateDisplayTime, 1000)
 
-        return () => clearInterval(interval)
-    }, [getChildTime, id, isParent, timer])
+        const updateSessionDisplayTime = () => {
+            if (!timer) return
+
+            if (isRunning) {
+                const now = Date.now()
+                const elapsed = Math.floor((now - (timer.lastStartedAt ?? now)) / 1000)
+                setSessionDisplayTime(elapsed)
+            }
+        }
+
+        updateDisplayTime()
+        updateSessionDisplayTime()
+
+        const interval = setInterval(updateDisplayTime, 1000)
+        const sessionInterval = setInterval(updateSessionDisplayTime, 1000)
+
+        return () => {
+            clearInterval(interval)
+            clearInterval(sessionInterval)
+        }
+    }, [getChildTime, id, isParent, timer, isRunning])
 
 
     // Auto-expand if this is the parent of a newly added skill
@@ -76,12 +101,13 @@ export function SkillCard({ skill, version = "original", className = "", forceEx
         if (forceExpanded && isParent) {
             setExpanded(true)
         }
+
     }, [forceExpanded, isParent])
 
     return (
         <>
             <Card
-                className={`hover:shadow-md transition-all duration-300 cursor-pointer relative overflow-hidden ${timer?.isRunning ? "scale-[1.02] shadow-lg ring-2 ring-blue-200" : ""} ${className}`}
+                className={`hover:shadow-md transition-all duration-300 cursor-pointer relative overflow-hidden ${isRunning ? "scale-[1.02] shadow-lg ring-2 ring-blue-200" : ""} ${className}`}
                 onClick={onToggleRun}
             >
                 <CardContent className="p-4 relative z-10">
@@ -89,7 +115,7 @@ export function SkillCard({ skill, version = "original", className = "", forceEx
 
                         {/* The color indicator */}
                         {version === "original" &&
-                            <div className={`w-1 h-14 rounded-full ${timer?.isRunning ? "bg-red-500" : "bg-gray-300"}`} />
+                            <div className={`w-1 h-14 rounded-full ${isRunning ? "bg-red-500" : "bg-gray-300"}`} />
                         }
                         {/* Title line */}
                         <div className="flex-1 min-w-0">
@@ -111,10 +137,14 @@ export function SkillCard({ skill, version = "original", className = "", forceEx
                                 )}
                             </div>
 
-                            {/* Time and Running flag */}
+                            {/* Session time */}
                             {version === "original" &&
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm text-gray-600 font-mono">{formatTime(displayTime)}</span>
+                                    <span className={`text-sm text-gray-600 font-mono  `}>
+                                        {isRunning ? `Current Session: ${formatTime(sessionDisplayTime)}`
+                                            : (lastSession > 0 ? `Last Session: ${formatTime(lastSession)}` : '')
+                                        }
+                                    </span>
                                 </div>
                             }
 
@@ -131,11 +161,15 @@ export function SkillCard({ skill, version = "original", className = "", forceEx
 
                         </div>
 
-                        {version === "dropdown" &&
-                            <span className="text-md text-gray-600 font-mono px-4">{formatTime(displayTime)}</span>
+                        {/* Session time for drop-down cards */}
+                        {version === "dropdown" && !isParent &&
+                            <span className="text-sm text-gray-600 font-mono px-4">
+                                {isRunning ? formatTime(sessionDisplayTime)
+                                    : ""
+                                }
+                            </span>
                         }
 
-                        {/* Hours display */}
                         {version === "original" &&
                             <div className="text-center">
                                 <div className="text-2xl font-bold text-gray-900">{Math.floor(displayTime / 3600)}</div>

@@ -15,6 +15,7 @@ export const skillsTable = pgTable("skills", {
         .notNull(),
     timeCount: integer("time_count")
         .notNull(),
+    lastSession: integer("last_session"),
     parentId: integer("parent_id"),
     description: text("description"),
 }, (table) => ({

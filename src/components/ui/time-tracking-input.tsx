@@ -50,7 +50,7 @@ const TimeTrackingInput = React.forwardRef<
         const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
             if (e.key === "Tab") return;
             e.preventDefault();
-            
+
             if (e.key === "ArrowRight") {
                 onRightFocus?.();
                 return;
@@ -59,7 +59,7 @@ const TimeTrackingInput = React.forwardRef<
                 onLeftFocus?.();
                 return;
             }
-            
+
             if (["ArrowUp", "ArrowDown"].includes(e.key)) {
                 const step = e.key === "ArrowUp" ? 1 : -1;
                 const currentValue = getTimeByType(totalSeconds, picker);
@@ -69,10 +69,10 @@ const TimeTrackingInput = React.forwardRef<
                 setInputValue(newValue);
                 return;
             }
-            
+
             if (e.key >= "0" && e.key <= "9") {
                 let newValue: string;
-                
+
                 if (picker === "hours") {
                     // For hours, allow multiple digits
                     newValue = flag ? inputValue + e.key : e.key;
@@ -87,10 +87,10 @@ const TimeTrackingInput = React.forwardRef<
                         newValue = newValue.slice(-2);
                     }
                 }
-                
+
                 setInputValue(newValue);
                 setFlag(true);
-                
+
                 // Auto-advance for minutes and seconds after 2 digits
                 if (picker !== "hours" && newValue.length === 2) {
                     setTimeout(() => {
@@ -98,13 +98,13 @@ const TimeTrackingInput = React.forwardRef<
                         setFlag(false);
                     }, 100);
                 }
-                
+
                 // Update total seconds
                 const newTotalSeconds = setTimeByType(totalSeconds, newValue, picker);
                 setTotalSeconds(newTotalSeconds);
                 return;
             }
-            
+
             // Handle backspace
             if (e.key === "Backspace") {
                 if (picker === "hours") {
