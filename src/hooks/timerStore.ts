@@ -5,77 +5,78 @@ import { persist } from 'zustand/middleware'
 type Timer = {
     id: number
     skill: Skill
-    time: number
     isRunning: boolean
     lastSession: number
     lastStartedAt: number | null
-    parentId: number | null
-    isBlocked?: boolean
 }
 
 interface TimerStore {
     timers: Record<number, Timer>
-    activateTimer: (id: number, skill: Skill, initTime: number, parentId: number | null) => void
     startTimer: (id: number) => void
     stopTimer: (id: number) => void
-    getTime: (id: number) => number
     getChildTime: (id: number) => number
     tick: () => void
     syncTimersWithSkills: (skills: Skill[]) => void
+    fetchSkills: () => void
 }
 
 export const useTimerStore = create<TimerStore>()(
     persist(
         (set, get) => ({
             timers: {},
-            activateTimer: (id, skill, initTime, parentId) => {
-                const timers = { ...get().timers }
-                const existingTimer = timers[id]
-                
-                // If timer was running before reload, preserve that state
-                const wasRunning = existingTimer?.isRunning ?? false
-                const lastStartedAt = existingTimer?.lastStartedAt
-                
-                timers[id] = {
-                    // Preserve all existing timer data
-                    ...existingTimer,
-                    // Update with new data
-                    id,
-                    skill,
-                    time: existingTimer?.time ?? initTime, // Keep existing time or use initTime
-                    isRunning: wasRunning, // Preserve running state
-                    lastStartedAt: lastStartedAt, // Preserve start time if running
-                    parentId,
-                    // Preserve existing lastSession
-                    lastSession: existingTimer?.lastSession ?? 0
-                }
-                
-                set({ timers })
-            },
             startTimer: (id) => {
                 const timers = { ...get().timers }
 
-                // check if we should start
-                const parentId = timers[id].parentId
-                // if is a child
-                if (parentId) {
-                    // if the child's parent is not running
-                    if (timers[parentId]?.isRunning) {
-                        get().stopTimer(parentId)
+                // extract all families
+                const parents = Object.values(timers).filter(timer => !timer.skill?.parentId)
+
+                // parents become a family
+                type Family = {
+                    parent: Timer;
+                    children: Timer[];
+                };
+
+                const families: Family[] = parents.map(parent => {
+                    // Collect all child timers
+                    const childTimers = Object.values(timers).filter(timer => timer.skill?.parentId === parent.id);
+
+                    // Return the Family object
+                    return {
+                        parent,
+                        children: childTimers
+                    };
+                });
+
+                // only one family can run at any time
+                // if some family is running, stop it
+
+                // array of familes that are running
+                const familiesRunning = families.reduce((acc: Family[], family) => {
+                    if (family.parent.isRunning || family.children.some(child => child.isRunning)) {
+                        acc.push(family)
+                    }
+                    return acc
+                }, []);
+
+                const stopFamily = (family: Family): void => {
+                    get().stopTimer(family.parent.id)
+                    family.children.forEach(child => get().stopTimer(child.id))
+                }
+
+                const currentFamily = families.find(family => family.parent.id === id || family.children.find(child => child.id === id))
+                // without stopping the current family
+                const toStop = currentFamily ? familiesRunning.filter(family => family.parent.id !== currentFamily.parent.id) : familiesRunning
+                toStop.forEach(family => stopFamily(family))
+
+                // any child can run or a parent within a family
+                // check within the family
+                if (timers[id].skill?.parentId) {
+                    if (currentFamily?.parent.isRunning) {
+                        get().stopTimer(currentFamily?.parent.id)
                     }
                     // if is a parent
-                } else if (!parentId) {
-                    const isHavingRunningChildren = Object.values(timers).some(timer => timer.parentId === id && timer.isRunning)
-
-                    // deactivate childrem
-                    if (isHavingRunningChildren) {
-                        Object.values(timers).forEach(timer => {
-                            if (timer.parentId === id && timer.isRunning) {
-                                get().stopTimer(timer.id)
-                            }
-                        })
-                    }
-
+                } else if (!timers[id].skill?.parentId) {
+                    currentFamily?.children.forEach(child => get().stopTimer(child.id))
                 }
 
                 timers[id] = {
@@ -96,19 +97,29 @@ export const useTimerStore = create<TimerStore>()(
                 const now = Date.now()
                 const elapsed = Math.floor((now - (timer.lastStartedAt ?? now)) / 1000)
 
-                timer.time += elapsed
-                timer.isRunning = false
-                timer.lastStartedAt = null
-                timer.lastSession = elapsed
+                if (timer.skill) {
+                    timer.skill.timeCount += elapsed
+                    timer.isRunning = false
+                    timer.lastStartedAt = null
+                    timer.lastSession = elapsed
+                }
+
 
                 set({ timers })
             },
             getChildTime: (id) => {
-                const timers = get().timers
-                const childTimes = Object.values(timers)
-                    .filter(t => t.skill?.parentId === id)
-                    .reduce((total, child) => total + child.time, 0)
+                const timers = { ...get().timers }
 
+                if (timers[id].skill?.parentId) {
+                    return 0
+                }
+
+                const childTimes = Object.values(timers)
+                    .filter(timer => timer.skill?.parentId === id)
+                    .reduce((total, timer) => total += timer.skill?.timeCount, 0)
+
+
+                console.log('getchildtime')
                 return childTimes
             },
             tick: () => {
@@ -130,21 +141,20 @@ export const useTimerStore = create<TimerStore>()(
                 const allowedIds = new Set<number>(flatten(skills))
                 const current = get().timers
                 const updated: Record<number, Timer> = {}
-                
+
                 // Preserve all existing timers and update skill data
                 for (const [key, timer] of Object.entries(current)) {
                     const id = Number(key)
                     if (allowedIds.has(id)) {
                         // Find the corresponding skill
-                        const skill = skills.find(s => s.id === id) || 
-                                    skills.flatMap(s => s.subSkills || []).find(sub => sub.id === id)
-                        
+                        const skill = skills.find(s => s.id === id) ||
+                            skills.flatMap(s => s.subSkills || []).find(sub => sub.id === id)
+
                         if (skill) {
                             // Update skill data but preserve timer state
                             updated[id] = {
                                 ...timer,
                                 skill: skill,
-                                parentId: skill.parentId || null
                             }
                         } else {
                             // Keep existing timer even if skill not found (might be a race condition)
@@ -155,17 +165,29 @@ export const useTimerStore = create<TimerStore>()(
                         updated[id] = timer
                     }
                 }
-                
+
                 set({ timers: updated })
             },
-            getTime: (id: number) => get().timers[id]?.time || 0,
-            setTime: (id: number, time: number) => {
+            fetchSkills: async () => {
+                const res = await fetch('api/main-skills')
+                const skills: Skill[] = await res.json()
+
                 const timers = { ...get().timers }
-                if (timers[id]) {
-                    timers[id].time = time
-                }
+
+                skills.forEach(skill => {
+
+                    timers[skill.id] = {
+                        id: skill.id, // skill id === timer id
+                        skill,
+
+                        lastSession: 0,
+                        isRunning: false,
+                        lastStartedAt: null,
+                    }
+                })
+
                 set({ timers })
-            }
+            },
         }),
         {
             name: 'timer-storage',

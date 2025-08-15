@@ -1,5 +1,4 @@
-"use client"
-
+'use client'
 import type React from "react"
 
 import { Card, CardContent } from "@/components/ui/card"
@@ -11,6 +10,7 @@ import InfoCard from "@/components/ui/info-card"
 import SkillFilters from "@/components/ui/skill-filters"
 import AddSkillPopup from "@/components/add-skill-popup"
 import { useTimerStore } from "@/hooks/timerStore"
+import combineSkills from "@/utils/combineSkills"
 
 
 const userStats = {
@@ -84,66 +84,22 @@ export default function Dashboard() {
     const [searchTerm, setSearchTerm] = useState("")
     const [rankFilter, setRankFilter] = useState("all")
     const [sortBy, setSortBy] = useState("hours")
-    const [apiSkills, setApiSkills] = useState<Skill[]>([])
-    const [expandedParentId, setExpandedParentId] = useState<number | null>(null)
-    const [hasInitialized, setHasInitialized] = useState(false)
 
-    const syncTimersWithSkills = useTimerStore((s) => s.syncTimersWithSkills)
-    const { timers } = useTimerStore()
+    const refreshSkills = () => null
 
-    const refreshSkills = async (parentIdToExpand?: number) => {
-        // Only fetch from API if we haven't initialized yet
-        if (!hasInitialized) {
-            const res = await fetch("/api/main-skills")
-            const updated = await res.json()
-            setApiSkills(updated)
-            setHasInitialized(true)
-
-            // Sync timers with the fetched skills
-            syncTimersWithSkills(updated)
-        } else {
-            // After initialization, just sync with existing skills
-            syncTimersWithSkills(apiSkills)
-        }
-
-        // If a new skill was added, and is a child, expand the parent for rerender purposes
-        if (parentIdToExpand) {
-            const parentComponent: Skill | undefined = apiSkills.find((skill: Skill) => skill.id === parentIdToExpand)
-            if (parentComponent) {
-                setExpandedParentId(parentComponent.id)
-            }
-        }
-    }
+    const timers = useTimerStore((state) => state.timers)
+    const [skills, setSkills] = useState<Skill[]>([])
 
     useEffect(() => {
-        // Only load once on mount
-        if (!hasInitialized) {
-            let cancelled = false
-            const load = async () => {
-                try {
-                    const res = await fetch("/api/main-skills", { 'cache': 'no-store' })
-                    const data = await res.json()
-                    if (!cancelled) {
-                        setApiSkills(Array.isArray(data) ? data : [])
-                        setHasInitialized(true)
-                        // Sync timers with the fetched skills
-                        syncTimersWithSkills(Array.isArray(data) ? data : [])
-                    }
-                } catch {
-                    if (!cancelled) setApiSkills([])
-                }
-            }
+        const res = Object.values(timers).map(timer => timer.skill)
+        const combined = combineSkills(res)
 
-            load()
-            return () => { cancelled = true }
-        }
+        setSkills(combined)
+    }, [timers])
 
-        console.log(timers)
-    }, [hasInitialized, syncTimersWithSkills])
 
     return (
-        <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-            <SyncTimers skills={apiSkills} onSync={syncTimersWithSkills} />
+        <div className="min-h-screen w-full bg-gray-50 p-4 md:p-6 overflow-auto">
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -152,7 +108,7 @@ export default function Dashboard() {
                         <p className="text-gray-600 mt-1">Your journey of meaningful progress continues</p>
                     </div>
                     <AddSkillPopup
-                        skills={apiSkills}
+                        skills={skills}
                         onAddSkill={refreshSkills}
                     />
                 </div>
@@ -182,14 +138,16 @@ export default function Dashboard() {
                     />
 
                     <div className="space-y-3">
-                        {apiSkills.map(skill => {
-                            return (
-                                <SkillCard
-                                    key={skill.id}
-                                    skill={skill}
-                                    forceExpanded={skill.id === expandedParentId}
-                                />
-                            )
+                        {skills.map(skill => {
+                            if (skill) {
+                                return (
+                                    <SkillCard
+                                        key={skill.id}
+                                        skill={skill}
+                                    />
+                                )
+                            }
+                            return null
                         })
                         }
                     </div>
@@ -216,13 +174,4 @@ export default function Dashboard() {
       `}</style>
         </div>
     )
-}
-
-
-
-function SyncTimers({ skills, onSync }: { skills: Skill[]; onSync: (skills: Skill[]) => void }) {
-    useEffect(() => {
-        onSync(skills)
-    }, [skills, onSync])
-    return null
 }

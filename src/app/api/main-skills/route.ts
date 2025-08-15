@@ -7,24 +7,11 @@ import type { Skill } from "@/models/skill";
 
 const db = drizzle(process.env.DATABASE_URL!);
 
-function combineSkills(skills: Skill[]): Skill[] {
-    const subSkills: Skill[] = skills.filter(skill => skill.parentId);
-
-    const res = skills
-        .filter(skill => !skill.parentId)
-        .map(skill => ({
-            ...skill,
-            subSkills: subSkills.filter(subSkill => subSkill.parentId === skill.id)
-        }))
-
-    return res
-}
-
 // GET: Fetch all main skills
 export async function GET() {
     try {
         const skills = await db.select().from(skillsTable) as Skill[]
-        const res = combineSkills(skills)
+        const res = skills
 
         if (!res || res.length <= 0) {
             return NextResponse.json({ error: "No result" }, { status: 400 });

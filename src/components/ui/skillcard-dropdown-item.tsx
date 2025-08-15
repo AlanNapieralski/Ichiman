@@ -7,8 +7,9 @@ type SkillCardDropdownItemProps = {
 }
 
 export default function SkillCardDropdownItem({ sub }: SkillCardDropdownItemProps) {
-    const time = useTimerStore((state) => state.timers[sub.id]?.time || 0)
+    const time = useTimerStore((state) => state.timers[sub.id].skill.timeCount || 0)
 
+    // need to emit something into the parent that it has been stopped and so we need to updated the value to include the children in the parent's total
 
     return (
         <>

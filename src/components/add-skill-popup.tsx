@@ -22,7 +22,7 @@ import type { Skill } from "@/models/skill"
 
 interface AddSkillPopupProps {
     skills: Skill[]
-    onAddSkill?: (newSkillParentId?: number) => void
+    onAddSkill?: (newSkillId?: number) => void
 }
 
 export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopupProps) {
@@ -76,13 +76,13 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
             setOpen(false);
 
             // Call the callback with the new skill ID
-            onAddSkill?.(result?.parentId ?? undefined);
+            onAddSkill?.(result?.id ?? undefined)
         } catch (err) {
-            console.error("Error posting skill:", err);
+            console.error("Error posting skill:", err)
             // Call the callback without ID on error
-            onAddSkill?.();
+            onAddSkill?.()
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
     };
 
@@ -146,8 +146,8 @@ export default function AddSkillPopup({ skills = [], onAddSkill }: AddSkillPopup
                                     <SelectValue placeholder="Select a parent skill" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {skills.map((skill) => !skill.parentId ? (
-                                        <SelectItem key={skill.id} value={skill.name}>
+                                    {skills.map((skill) => skill && !skill.parentId ? (
+                                        <SelectItem key={skill.id || 0} value={skill.name}>
                                             {skill.name}
                                         </SelectItem>
                                     ) : null)}

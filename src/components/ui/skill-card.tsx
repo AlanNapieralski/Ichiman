@@ -21,8 +21,6 @@ type SkillCardPropsType = {
     forceExpanded?: boolean
 }
 
-
-
 function getRank(timeCount: number): Rank {
     const entry = rankDataArr.find(([, obj]) => timeCount >= obj.goal)
     return entry ? entry[0] : "loading"
@@ -31,19 +29,22 @@ function getRank(timeCount: number): Rank {
 export function SkillCard({ skill, version = "original", className = "", forceExpanded = false }: SkillCardPropsType) {
     const id = skill.id
     const isParent = Boolean(skill.subSkills && skill.subSkills.length > 0)
+    console.log(skill)
 
-    const [expanded, setExpanded] = useState(false)
-    const [displayTime, setDisplayTime] = useState(0)
-    const [sessionDisplayTime, setSessionDisplayTime] = useState(0)
 
-    const { activateTimer, getChildTime, startTimer, stopTimer } = useTimerStore()
+    const { getChildTime, startTimer, stopTimer } = useTimerStore()
     const timer = useTimerStore((state) => state.timers[id])
-    const time = useTimerStore((state) => state.timers[id]?.time || 0)
+    const time = useTimerStore((state) => state.timers[id]?.skill?.timeCount || 0)
     const isRunning = useTimerStore((state) => state.timers[id]?.isRunning || null)
     const lastSession = useTimerStore((state) => state.timers[id]?.lastSession || 0)
 
-    const rank: Rank = useMemo(() => getRank(time), [time])
-    const clampedProgress = useMemo(() => calculateClampedProgress(rank, time), [rank, time])
+    const [expanded, setExpanded] = useState(false)
+    const [displayTime, setDisplayTime] = useState(time + getChildTime(id))
+    const [sessionDisplayTime, setSessionDisplayTime] = useState(0)
+
+    const rank: Rank = useMemo(() => getRank(displayTime), [displayTime])
+    const clampedProgress = useMemo(() => calculateClampedProgress(rank, displayTime), [rank, displayTime])
+
 
     const onToggleRun = () => {
         if (!isRunning) startTimer(id)
@@ -51,19 +52,11 @@ export function SkillCard({ skill, version = "original", className = "", forceEx
     }
 
     useEffect(() => {
-        // Only activate timer if it doesn't exist yet
-        if (!timer) {
-            activateTimer(id, skill, skill.timeCount, skill.parentId)
-        }
-        return () => {
-            // Don't stop timer on unmount - let it persist
-        }
-    }, [activateTimer, id, skill, timer])
+        if (!timer || !timer.isRunning) return
 
-    useEffect(() => {
-        if (!timer) return
         const updateDisplayTime = () => {
-            const initTime = isParent ? timer.time + getChildTime(id) : timer.time
+            const initTime = isParent ? time + getChildTime(id) : time
+            console.log('child time: ', getChildTime(id))
             if (isRunning) {
                 const now = Date.now()
                 const elapsed = Math.floor((now - (timer.lastStartedAt ?? now)) / 1000)
@@ -93,16 +86,24 @@ export function SkillCard({ skill, version = "original", className = "", forceEx
             clearInterval(interval)
             clearInterval(sessionInterval)
         }
-    }, [getChildTime, id, isParent, timer, isRunning])
+    }, [getChildTime, id, isParent, timer, isRunning, time])
 
 
     // Auto-expand if this is the parent of a newly added skill
     useEffect(() => {
         if (forceExpanded && isParent) {
+            console.log('Auto-expanding parent card:', skill.name, 'ID:', skill.id)
             setExpanded(true)
         }
+    }, [forceExpanded, isParent, skill.name, skill.id])
 
-    }, [forceExpanded, isParent])
+    // Keep parent expanded if it should be expanded
+    useEffect(() => {
+        if (forceExpanded && isParent && !expanded) {
+            console.log('Forcing expansion of parent card:', skill.name, 'ID:', skill.id)
+            setExpanded(true)
+        }
+    }, [forceExpanded, isParent, expanded, skill.name, skill.id])
 
     return (
         <>
